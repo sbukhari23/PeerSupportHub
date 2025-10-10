@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your PeerSupportHub dashboard - Track habits, connect with peers, and monitor progress">
+    <title>Dashboard - PeerSupportHub</title>
+    
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body class="dashboard-layout">
+    <!-- Skip link for accessibility -->
+    <a href="#main-content" class="sr-only">Skip to main content</a>
+
+    <!-- Mobile Header -->
+    <header class="dashboard-header mobile-only">
+        <div class="container">
+            <div class="header-content">
+                <button class="sidebar-toggle" aria-label="Toggle navigation menu">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
+                
+                <div class="header-title">
+                    <h1>Dashboard</h1>
+                    <span class="streak-indicator">
+                        🔥 <span id="current-streak">3</span> day streak
+                    </span>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="notification-btn" aria-label="Notifications">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    
+                    <button class="profile-btn" aria-label="Profile menu">
+                        <img src="/avatar-placeholder.svg" alt="Profile" width="32" height="32" class="profile-avatar">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" role="navigation" aria-label="Main navigation">
+        <div class="sidebar-header">
+            <a href="../index.html" class="brand-link">
+                <img src="/logo.svg" alt="PeerSupportHub" width="32" height="32">
+                <span class="brand-text">PeerSupportHub</span>
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="dashboard.html" class="nav-link active">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="habits.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="nav-text">My Habits</span>
+                        <span class="nav-badge">5</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="peers.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m0 0a4 4 0 11-3.478 0"/>
+                        </svg>
+                        <span class="nav-text">Peer Support</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="mentors.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span class="nav-text">Mentors</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="community.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span class="nav-text">Community</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="focus.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <span class="nav-text">Focus Tools</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <img src="/avatar-placeholder.svg" alt="Profile" width="40" height="40" class="user-avatar">
+                <div class="user-details">
+                    <span class="user-name" id="user-name">Faisal Iqbal</span>
+                    <span class="user-type" id="user-type">Student</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-actions">
+                <a href="profile.html" class="sidebar-action" aria-label="Profile settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </a>
+                
+                <button class="sidebar-action logout-btn" aria-label="Logout">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content" role="main">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome-section" aria-labelledby="welcome-heading">
+                <div class="welcome-content">
+                    <h1 id="welcome-heading" class="welcome-title desktop-only">
+                        Good <span id="time-of-day">morning</span>, <span id="user-name-welcome">Faisal</span>! 👋
+                    </h1>
+                    
+                    <div class="daily-summary">
+                        <div class="summary-card card">
+                            <div class="card-body">
+                                <h2 class="summary-title">Today's Progress</h2>
+                                <div class="progress-overview">
+                                    <div class="progress-stat">
+                                        <span class="stat-value">3/5</span>
+                                        <span class="stat-label">Habits completed</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 60%"></div>
+                                    </div>
+                                    <span class="progress-percentage">60%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions" aria-labelledby="quick-actions-heading">
+                <h2 id="quick-actions-heading" class="section-title">Quick Actions</h2>
+                <div class="action-grid">
+                    <button class="action-card card" id="log-habit-btn">
+                        <div class="card-body text-center">
+                            <div class="action-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="text-primary">
+                                    <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                            </div>
+                            <h3 class="action-title">Log Habit</h3>
+                            <p class="action-description">Record a completed habit</p>
+                        </div>
+                    </button>
+                    
+                    <button class="action-card card" id="start-focus-btn">
+                        <div class="card-body text-center">
+                            <div class="action-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="text-secondary">
+                                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <h3 class="action-title">Start Focus</h3>
+                            <p class="action-description">Begin a focused work session</p>
+                        </div>
+                    </button>
+                    
+                    <button class="action-card card" id="check-peers-btn">
+                        <div class="card-body text-center">
+                            <div class="action-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="text-accent">
+                                    <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                            </div>
+                            <h3 class="action-title">Check Peers</h3>
+                            <p class="action-description">See how your peers are doing</p>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Today's Habits -->
+            <section class="todays-habits" aria-labelledby="todays-habits-heading">
+                <div class="section-header">
+                    <h2 id="todays-habits-heading" class="section-title">Today's Habits</h2>
+                    <a href="habits.html" class="section-link">View all habits</a>
+                </div>
+                
+                <div class="habits-list" id="todays-habits-list">
+                    <!-- Habit items will be dynamically loaded -->
+                    <div class="habit-item card">
+                        <div class="card-body">
+                            <div class="habit-info">
+                                <div class="habit-icon">
+                                    <span class="habit-emoji">📚</span>
+                                </div>
+                                <div class="habit-details">
+                                    <h3 class="habit-name">Morning Study</h3>
+                                    <p class="habit-target">Target: 60 minutes</p>
+                                </div>
+                            </div>
+                            <div class="habit-actions">
+                                <button class="btn btn-secondary btn-sm habit-complete-btn" data-habit-id="1">
+                                    ✓ Complete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="habit-item card completed">
+                        <div class="card-body">
+                            <div class="habit-info">
+                                <div class="habit-icon">
+                                    <span class="habit-emoji">💧</span>
+                                </div>
+                                <div class="habit-details">
+                                    <h3 class="habit-name">Drink Water</h3>
+                                    <p class="habit-target">Completed: 45 minutes ago</p>
+                                </div>
+                            </div>
+                            <div class="habit-status">
+                                <span class="status-badge status-completed">✓ Done</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Feed -->
+            <section class="activity-feed" aria-labelledby="activity-heading">
+                <div class="section-header">
+                    <h2 id="activity-heading" class="section-title">Recent Activity</h2>
+                    <button class="section-action" id="refresh-activity">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="activity-list" id="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-avatar">
+                            <img src="/avatar-placeholder.svg" alt="Sarah" width="32" height="32">
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">
+                                <strong>Sarah K.</strong> completed her morning workout streak!
+                            </p>
+                            <time class="activity-time">2 hours ago</time>
+                        </div>
+                        <div class="activity-action">
+                            <button class="btn btn-outline btn-sm">Celebrate 🎉</button>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-item">
+                        <div class="activity-avatar">
+                            <img src="/avatar-placeholder.svg" alt="Ahmed" width="32" height="32">
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">
+                                <strong>Ahmed R.</strong> reached a 7-day reading streak
+                            </p>
+                            <time class="activity-time">4 hours ago</time>
+                        </div>
+                        <div class="activity-action">
+                            <button class="btn btn-outline btn-sm">👏</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Weekly Overview -->
+            <section class="weekly-overview" aria-labelledby="weekly-heading">
+                <div class="section-header">
+                    <h2 id="weekly-heading" class="section-title">This Week's Overview</h2>
+                    <a href="analytics.html" class="section-link">View detailed analytics</a>
+                </div>
+                
+                <div class="overview-grid">
+                    <div class="overview-card card">
+                        <div class="card-body">
+                            <h3 class="overview-title">Completion Rate</h3>
+                            <div class="overview-metric">
+                                <span class="metric-value">78%</span>
+                                <span class="metric-change positive">+12%</span>
+                            </div>
+                            <p class="overview-description">vs last week</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card card">
+                        <div class="card-body">
+                            <h3 class="overview-title">Longest Streak</h3>
+                            <div class="overview-metric">
+                                <span class="metric-value">12 days</span>
+                                <span class="metric-change positive">New record!</span>
+                            </div>
+                            <p class="overview-description">Morning study habit</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-card card">
+                        <div class="card-body">
+                            <h3 class="overview-title">Peer Interactions</h3>
+                            <div class="overview-metric">
+                                <span class="metric-value">24</span>
+                                <span class="metric-change neutral">+3</span>
+                            </div>
+                            <p class="overview-description">Messages and support</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Habit Logging Modal -->
+    <div class="modal hidden" id="log-habit-modal" aria-hidden="true">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" role="dialog" aria-labelledby="log-habit-title">
+            <div class="modal-header">
+                <h2 id="log-habit-title" class="modal-title">Log Habit</h2>
+                <button type="button" class="modal-close" aria-label="Close modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="log-habit-form">
+                    <div class="form-group">
+                        <label for="habit-select" class="form-label">Select Habit</label>
+                        <select id="habit-select" name="habitId" class="form-input" required>
+                            <option value="">Choose a habit...</option>
+                            <option value="1">📚 Morning Study</option>
+                            <option value="2">🏃 Exercise</option>
+                            <option value="3">💧 Drink Water</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duration" class="form-label">Duration (minutes)</label>
+                        <input
+                            type="number"
+                            id="duration"
+                            name="duration"
+                            class="form-input"
+                            min="1"
+                            max="1440"
+                            placeholder="How long did you spend?"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mood" class="form-label">How did it feel?</label>
+                        <div class="mood-selector">
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="1" required>
+                                <span class="mood-emoji">😔</span>
+                                <span class="mood-label">Difficult</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="2">
+                                <span class="mood-emoji">😐</span>
+                                <span class="mood-label">Okay</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="3">
+                                <span class="mood-emoji">🙂</span>
+                                <span class="mood-label">Good</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="4">
+                                <span class="mood-emoji">😊</span>
+                                <span class="mood-label">Great</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="5">
+                                <span class="mood-emoji">🤩</span>
+                                <span class="mood-label">Amazing</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes" class="form-label">Notes (optional)</label>
+                        <textarea
+                            id="notes"
+                            name="notes"
+                            class="form-input"
+                            rows="3"
+                            placeholder="Any thoughts or reflections?"
+                        ></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="cancel-log">Cancel</button>
+                <button type="submit" form="log-habit-form" class="btn btn-primary">Log Habit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+        <!-- JavaScript Application -->
+    <script src="../scripts/config.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/habits.js"></script>
+    <script src="../scripts/notifications.js"></script>
+    <script src="../scripts/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "name": "peer-support-hub",
+  "version": "1.0.0",
+  "description": "A structured peer support platform for building positive habits and reducing digital distractions",
+  "main": "src/index.html",
+  "scripts": {
+    "dev": "live-server src --port=3000 --open=/index.html",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "mkdir -p dist && cp -r src/* dist/",
+    "build:backend": "mkdir -p dist/server && cp -r server/* dist/server/",
+    "server": "node server/app.js",
+    "server:dev": "nodemon server/app.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src server --ext .js",
+    "lint:fix": "eslint src server --ext .js --fix",
+    "format": "prettier --write src/**/*.{js,html,css} server/**/*.js",
+    "start:full": "concurrently \"npm run server:dev\" \"npm run dev\""
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "mongoose": "^7.5.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.0",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.8.0",
+    "validator": "^13.9.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "concurrently": "^8.2.0",
+    "live-server": "^1.2.2",
+    "eslint": "^8.45.0",
+    "jest": "^29.6.0",
+    "prettier": "^3.0.0",
+    "supertest": "^6.3.0",
+    "jsdom": "^22.1.0",
+    "jsdom-global": "^3.0.2"
+  },
+  "keywords": ["peer-support", "habit-tracking", "productivity", "mental-health", "community", "mern-stack"],
+  "authors": [
+    "Syed Muneeb ur Rehman Bukhari (Team Lead) - Member A",
+    "Hassan Shahid (Frontend React/Next.js, Tailwind) - Member B", 
+    "Faisal Iqbal (Backend Node.js/Firebase) - Member C"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

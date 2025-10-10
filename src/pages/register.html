@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Register for PeerSupportHub - Join our community of habit builders">
+    <title>Join PeerSupportHub - Registration</title>
+    
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+    <div class="auth-container">
+        <header class="auth-header">
+            <a href="../index.html" class="brand-link">
+                <img src="/logo.svg" alt="PeerSupportHub" width="40" height="40">
+                <span class="brand-text">PeerSupportHub</span>
+            </a>
+        </header>
+
+        <main class="auth-main">
+            <div class="auth-card card">
+                <div class="card-header text-center">
+                    <h1 class="auth-title">Join PeerSupportHub</h1>
+                    <p class="auth-subtitle">Start building better habits with peer support</p>
+                </div>
+
+                <div class="card-body">
+                    <form id="register-form" class="auth-form" novalidate>
+                        <!-- User Type Selection -->
+                        <div class="form-group">
+                            <label class="form-label">I am a:</label>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="userType" value="student" required>
+                                    <span class="radio-label">
+                                        <strong>Student</strong>
+                                        <small>University/College student</small>
+                                    </span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="userType" value="professional" required>
+                                    <span class="radio-label">
+                                        <strong>Professional</strong>
+                                        <small>Early career professional</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-error" id="userType-error"></div>
+                        </div>
+
+                        <!-- Personal Information -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input
+                                    type="text"
+                                    id="firstName"
+                                    name="firstName"
+                                    class="form-input"
+                                    placeholder="Enter your first name"
+                                    required
+                                    autocomplete="given-name"
+                                >
+                                <div class="form-error" id="firstName-error"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input
+                                    type="text"
+                                    id="lastName"
+                                    name="lastName"
+                                    class="form-input"
+                                    placeholder="Enter your last name"
+                                    required
+                                    autocomplete="family-name"
+                                >
+                                <div class="form-error" id="lastName-error"></div>
+                            </div>
+                        </div>
+
+                        <!-- Username -->
+                        <div class="form-group">
+                            <label for="username" class="form-label">Username</label>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                class="form-input"
+                                placeholder="Choose a unique username"
+                                required
+                                autocomplete="username"
+                                minlength="3"
+                                maxlength="20"
+                                pattern="^[a-zA-Z0-9_]+$"
+                            >
+                            <small class="form-help">3-20 characters, letters, numbers, and underscores only</small>
+                            <div class="form-error" id="username-error"></div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-input"
+                                placeholder="Enter your email address"
+                                required
+                                autocomplete="email"
+                            >
+                            <div class="form-error" id="email-error"></div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="password-field">
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    class="form-input"
+                                    placeholder="Create a strong password"
+                                    required
+                                    autocomplete="new-password"
+                                    minlength="8"
+                                >
+                                <button type="button" class="password-toggle" aria-label="Show password">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="password-strength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strength-fill"></div>
+                                </div>
+                                <span class="strength-text" id="strength-text">Password strength</span>
+                            </div>
+                            <small class="form-help">Minimum 8 characters with letters and numbers</small>
+                            <div class="form-error" id="password-error"></div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="form-group">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                class="form-input"
+                                placeholder="Confirm your password"
+                                required
+                                autocomplete="new-password"
+                            >
+                            <div class="form-error" id="confirmPassword-error"></div>
+                        </div>
+
+                        <!-- Terms and Privacy -->
+                        <div class="form-group">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="agreeToTerms" required>
+                                <span class="checkbox-label">
+                                    I agree to the <a href="/terms" target="_blank">Terms of Service</a> 
+                                    and <a href="/privacy" target="_blank">Privacy Policy</a>
+                                </span>
+                            </label>
+                            <div class="form-error" id="agreeToTerms-error"></div>
+                        </div>
+
+                        <!-- Newsletter Subscription -->
+                        <div class="form-group">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="subscribeNewsletter" checked>
+                                <span class="checkbox-label">
+                                    Send me updates about new features and habit-building tips
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-full btn-lg" id="register-btn">
+                            <span class="btn-text">Create Account</span>
+                            <span class="btn-loading hidden">
+                                <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+                                    <circle class="spinner-path" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="4"/>
+                                </svg>
+                                Creating account...
+                            </span>
+                        </button>
+
+                        <!-- General Error Display -->
+                        <div class="form-error text-center hidden" id="general-error"></div>
+                    </form>
+                </div>
+
+                <div class="card-footer text-center">
+                    <p class="auth-footer">
+                        Already have an account? 
+                        <a href="login.html" class="auth-link">Sign in here</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Social Proof -->
+            <div class="auth-social-proof text-center">
+                <p class="social-proof-text">
+                    Join <strong>500+</strong> students and professionals building better habits
+                </p>
+                <div class="testimonial">
+                    <blockquote class="testimonial-quote">
+                        "PeerSupportHub helped me build a consistent study routine. 
+                        The accountability partners made all the difference."
+                    </blockquote>
+                    <cite class="testimonial-author">— Sarah K., University Student</cite>
+                </div>
+            </div>
+        </main>
+
+        <footer class="auth-footer-nav">
+            <nav aria-label="Footer navigation">
+                <a href="/help">Help</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/contact">Contact</a>
+            </nav>
+        </footer>
+    </div>
+
+    <!-- Registration Success Modal -->
+    <div class="modal hidden" id="success-modal" aria-hidden="true">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" role="dialog" aria-labelledby="success-title">
+            <div class="modal-header">
+                <h2 id="success-title" class="modal-title">Welcome to PeerSupportHub!</h2>
+            </div>
+            <div class="modal-body">
+                <div class="success-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" class="text-secondary">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p class="modal-text">
+                    Your account has been created successfully! 
+                    Check your email for a verification link to get started.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="continue-btn">
+                    Continue to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+        <!-- JavaScript Application -->
+    <script src="../scripts/config.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/notifications.js"></script>
+    <script src="../scripts/main.js"></script>
+</body>
+</html>
