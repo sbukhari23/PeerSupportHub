@@ -2,25 +2,61 @@ const mongoose = require('mongoose');
 
 const userSchema = mongoose.Schema(
   {
-    name: {
+    authId: {
       type: String,
       required: true,
+      unique: true,
     },
     email: {
       type: String,
       required: true,
-      unique: true, // No two users can have the same email
+      unique: true,
     },
-    password: {
+    username: {
       type: String,
       required: true,
     },
+    gender: {
+      type: String,
+      required: false, 
+    },
+    userType: {
+      type: String,
+      enum: ['User', 'Mentor', 'Admin'],
+      default: 'User',
+    },
+    onboardingIntent: {
+      type: String,
+      required: false,
+    },
+    settings: {
+      language: String,
+      contentPreference: {
+        type: String,
+        enum: ['General', 'Guided'],
+        default: 'General',
+      },
+      reminders: Boolean,
+    },
+    currentProgressScore: {
+      type: Number,
+      default: 0,
+    },
+    buddyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+    },
+    pods: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group', 
+      },
+    ],
   },
   {
-    timestamps: true, // Automatically adds 'createdAt' and 'updatedAt' fields
+    timestamps: true,
   }
 );
 
 const User = mongoose.model('User', userSchema);
-
 module.exports = User;
