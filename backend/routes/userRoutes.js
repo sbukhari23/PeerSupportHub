@@ -6,28 +6,31 @@ const User = require('../models/User'); // We ../ to go UP from routes into mode
 // @desc    Register a new user
 // @access  Public
 router.post('/register', async (req, res) => {
-  // We will get the user's data from the request body
-  const { name, email, password } = req.body;
+  const { name, email, password, username, userType } = req.body;
 
   try {
-    // Check if the user already exists
-    let user = await User.findOne({ email });
+    // MANUAL CHECK: If registering via this route, password IS required
+    if (!password) {
+      return res.status(400).json({ msg: 'Please provide a password' });
+    }
 
+    // Check if user exists
+    let user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    // If not, create a new User instance
+    // Create user (The pre-save hook in User.js will handle the hashing!)
     user = new User({
       name,
       email,
-      password,
+      password, // Pass plain text here; User.js converts it to hash
+      username,
+      userType: userType || 'User',
     });
 
-    // Save the new user to the database
     await user.save();
 
-    // For now, just send a success message
     res.status(201).json({ msg: 'User registered successfully' });
 
   } catch (err) {
@@ -35,5 +38,4 @@ router.post('/register', async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-
 module.exports = router;
