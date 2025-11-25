@@ -45,3 +45,9 @@ const userHabitSchema = mongoose.Schema(
 
 const UserHabit = mongoose.model('UserHabit', userHabitSchema);
 module.exports = UserHabit;
+
+
+
+
+
+farhsfdjk jvikj afhd sncmzfhsdvjxcacgkzdh gjhzhx jkfmnhsvzdugjh zjfhhhhhhhhhhhqty8baennnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnyf HVEUFKJADNFGUASDJHHNACFUAWRUEYCBYFTY[C 8FUASDTFCBNXA<UCDBPADYXBDSCVNRFGRSEUIGNXHC A DVIONSYFNCPFBVUNZ FST VGUFZYYE7WBUTFVXDG U]
