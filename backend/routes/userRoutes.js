@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User'); // We ../ to go UP from routes into models
+const User = require('../models/User');
+const generateToken = require('../utils/generateToken');
 
 // @route   POST /api/users/register
 // @desc    Register a new user
@@ -9,33 +10,69 @@ router.post('/register', async (req, res) => {
   const { name, email, password, username, userType } = req.body;
 
   try {
-    // MANUAL CHECK: If registering via this route, password IS required
     if (!password) {
       return res.status(400).json({ msg: 'Please provide a password' });
     }
 
-    // Check if user exists
     let user = await User.findOne({ $or: [{ email }, { username }] });
+
     if (user) {
-      return res.status(400).json({ msg: 'User already exists' });
+      return res.status(400).json({ msg: 'User with this email or username already exists' });
     }
 
-    // Create user (The pre-save hook in User.js will handle the hashing!)
     user = new User({
       name,
       email,
-      password, // Pass plain text here; User.js converts it to hash
+      password,
       username,
       userType: userType || 'User',
     });
 
     await user.save();
 
-    res.status(201).json({ msg: 'User registered successfully' });
+    // Respond with the user info AND the token
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      userType: user.userType,
+      token: generateToken(user._id),
+    });
 
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
+
+// @route   POST /api/users/login
+// @desc    Auth user & get token
+// @access  Public
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // 1. Check if user exists
+    const user = await User.findOne({ email });
+
+    // 2. Check if password matches (using the method we added to User.js)
+    if (user && (await user.matchPassword(password))) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        userType: user.userType,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(401).json({ msg: 'Invalid email or password' });
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;

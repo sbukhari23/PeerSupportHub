@@ -12,6 +12,8 @@ const app = express();
 
 // This new line allows our server to accept JSON data in the body of a request
 app.use(express.json());
+// This allows us to accept form data (like from Postman without JSON header)
+app.use(express.urlencoded({ extended: false }));
 
 // This new line tells the server to use our user routes
 app.use('/api/users', require('./routes/userRoutes'));
