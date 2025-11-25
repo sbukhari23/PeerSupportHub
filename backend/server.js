@@ -18,6 +18,9 @@ app.use(express.urlencoded({ extended: false }));
 // This new line tells the server to use our user routes
 app.use('/api/users', require('./routes/userRoutes'));
 
+// This new line tells the server to use our habit routes
+app.use('/api/habits', require('./routes/habitRoutes'));
+
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
