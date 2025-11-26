@@ -21,6 +21,9 @@ app.use('/api/users', require('./routes/userRoutes'));
 // This new line tells the server to use our habit routes
 app.use('/api/habits', require('./routes/habitRoutes'));
 
+// Group routes
+app.use('/api/groups', require('./routes/groupRoutes'));
+
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
