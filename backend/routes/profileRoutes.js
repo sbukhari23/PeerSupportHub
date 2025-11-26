@@ -1,0 +1,278 @@
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const UserHabit = require('../models/UserHabit');
+const DailyLog = require('../models/DailyLog');
+const BuddyRequest = require('../models/BuddyRequest');
+const { protect } = require('../middleware/authMiddleware');
+
+// @route   GET /api/profile/me
+// @desc    Get current user's profile
+// @access  Private
+router.get('/me', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT /api/profile
+// @desc    Update profile (settings, etc.)
+// @access  Private
+router.put('/', protect, async (req, res) => {
+  const { name, username, gender, onboardingIntent, settings } = req.body;
+
+  // Build profile object
+  const profileFields = {};
+  if (name) profileFields.name = name;
+  if (username) profileFields.username = username;
+  if (gender) profileFields.gender = gender;
+  if (onboardingIntent) profileFields.onboardingIntent = onboardingIntent;
+  if (settings) profileFields.settings = settings;
+
+  try {
+    let user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found: unable to update profile' });
+    }
+
+    // Update
+    user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: profileFields },
+      { new: true }
+    ).select('-password');
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error: unable to update profile');
+  }
+});
+
+// @route   GET /api/profile/stats
+// @desc    Get user's overall stats
+// @access  Private
+router.get('/stats', protect, async (req, res) => {
+  try {
+    // 1. Total active habits
+    const activeHabitsCount = await UserHabit.countDocuments({
+      userId: req.user._id,
+      isActive: true,
+    });
+
+    // 2. Longest streak across all habits
+    // We can find the max streak from all UserHabits for this user
+    const habits = await UserHabit.find({ userId: req.user._id });
+    let longestStreak = 0;
+    habits.forEach((habit) => {
+      if (habit.streak > longestStreak) {
+        longestStreak = habit.streak;
+      }
+    });
+
+    // 3. Overall completion rate
+    // Strategy: (Total Completed Logs / Total Logs) * 100
+    // First, get all userHabit IDs for this user
+    const userHabitIds = habits.map((h) => h._id);
+    
+    const totalLogs = await DailyLog.countDocuments({
+      userHabitId: { $in: userHabitIds },
+    });
+
+    const completedLogs = await DailyLog.countDocuments({
+      userHabitId: { $in: userHabitIds },
+      completionStatus: 'Completed',
+    });
+
+    const completionRate = totalLogs === 0 ? 0 : (completedLogs / totalLogs) * 100;
+
+    // 4. Current progress score
+    const currentProgressScore = req.user.currentProgressScore || 0;
+
+    res.json({
+      activeHabits: activeHabitsCount,
+      longestStreak,
+      completionRate: Math.round(completionRate * 10) / 10, // Round to 1 decimal
+      currentProgressScore,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET /api/profile/buddy/requests
+// @desc    Get all pending buddy requests
+// @access  Private
+router.get('/buddy/requests', protect, async (req, res) => {
+  try {
+    const requests = await BuddyRequest.find({
+      recipient: req.user._id,
+      status: 'Pending',
+    }).populate('sender', 'name username currentProgressScore');
+
+    res.json(requests);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET /api/profile/buddy/:userId
+// @desc    View buddy's public profile
+// @access  Private
+router.get('/buddy/:userId', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select(
+      'name username currentProgressScore'
+    ); // Only return public info
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   POST /api/profile/buddy/request/:userId
+// @desc    Send a buddy request
+// @access  Private
+router.post('/buddy/request/:userId', protect, async (req, res) => {
+  try {
+    const targetUserId = req.params.userId;
+
+    if (targetUserId === req.user._id.toString()) {
+      return res.status(400).json({ msg: 'Cannot send request to self' });
+    }
+
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Check if already buddies
+    if (
+      targetUser.buddyId &&
+      targetUser.buddyId.toString() === req.user._id.toString()
+    ) {
+      return res.status(400).json({ msg: 'You are already buddies' });
+    }
+
+    // Check if request already sent (pending)
+    const existingRequest = await BuddyRequest.findOne({
+      sender: req.user._id,
+      recipient: targetUserId,
+      status: 'Pending',
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ msg: 'Request already sent' });
+    }
+
+    // Check if they sent YOU a request (pending)
+    const reverseRequest = await BuddyRequest.findOne({
+      sender: targetUserId,
+      recipient: req.user._id,
+      status: 'Pending',
+    });
+
+    if (reverseRequest) {
+      return res
+        .status(400)
+        .json({ msg: 'This user has already sent you a request. Please accept it.' });
+    }
+
+    // Create new request
+    const newRequest = new BuddyRequest({
+      sender: req.user._id,
+      recipient: targetUserId,
+    });
+
+    await newRequest.save();
+
+    res.json({ msg: 'Buddy request sent' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT /api/profile/buddy/accept/:requestId
+// @desc    Accept a buddy request
+// @access  Private
+router.put('/buddy/accept/:requestId', protect, async (req, res) => {
+  try {
+    const requestId = req.params.requestId;
+
+    const request = await BuddyRequest.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({ msg: 'Request not found' });
+    }
+
+    // Verify the recipient is the current user
+    if (request.recipient.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ msg: 'Not authorized' });
+    }
+
+    if (request.status !== 'Pending') {
+      return res.status(400).json({ msg: 'Request is not pending' });
+    }
+
+    // 1. Update Request Status
+    request.status = 'Accepted';
+    await request.save();
+
+    // 2. Update Both Users
+    await User.findByIdAndUpdate(req.user._id, { buddyId: request.sender });
+    await User.findByIdAndUpdate(request.sender, { buddyId: req.user._id });
+
+    res.json({ msg: 'Buddy request accepted' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   PUT /api/profile/buddy/reject/:requestId
+// @desc    Reject a buddy request
+// @access  Private
+router.put('/buddy/reject/:requestId', protect, async (req, res) => {
+  try {
+    const requestId = req.params.requestId;
+
+    const request = await BuddyRequest.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({ msg: 'Request not found' });
+    }
+
+    // Verify the recipient is the current user
+    if (request.recipient.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ msg: 'Not authorized' });
+    }
+
+    // Update Status
+    request.status = 'Rejected';
+    await request.save();
+
+    res.json({ msg: 'Buddy request rejected' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+module.exports = router;
