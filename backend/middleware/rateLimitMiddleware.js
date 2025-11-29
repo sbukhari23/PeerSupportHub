@@ -1,8 +1,12 @@
 const rateLimit = require('express-rate-limit');
 
-const isTestEnv = process.env.NODE_ENV === 'test';
 const passThrough = (req, _res, next) => next();
-const buildLimiter = (options) => (isTestEnv ? passThrough : rateLimit(options));
+const shouldBypass = () => process.env.RATE_LIMIT_DISABLED === 'true';
+
+const buildLimiter = (options) => {
+  const limiter = rateLimit(options);
+  return (req, res, next) => (shouldBypass() ? passThrough(req, res, next) : limiter(req, res, next));
+};
 
 // General API rate limiter
 const apiLimiter = buildLimiter({
