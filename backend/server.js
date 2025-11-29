@@ -1,6 +1,10 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const cors = require('cors');
 const connectDB = require('./config/db');
+const { errorHandler, notFound } = require('./middleware/errorMiddleware');
+const { apiLimiter } = require('./middleware/rateLimitMiddleware');
 
 // Load .env variables
 dotenv.config();
@@ -10,9 +14,13 @@ connectDB();
 
 const app = express();
 
-// This new line allows our server to accept JSON data in the body of a request
+// Security Middleware
+app.use(helmet()); // Adds security headers
+app.use(cors()); // Enable CORS for all routes
+app.use(apiLimiter); // Rate limiting
+
+// Body Parsing Middleware
 app.use(express.json());
-// This allows us to accept form data (like from Postman without JSON header)
 app.use(express.urlencoded({ extended: false }));
 
 // This new line tells the server to use our user routes
@@ -32,6 +40,10 @@ app.use('/api/groups', require('./routes/groupRoutes'));
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
+
+// Error Handling Middleware (Must be last)
+app.use(notFound); // 404 handler
+app.use(errorHandler); // General error handler
 
 const PORT = process.env.PORT || 5000;
 
