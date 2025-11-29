@@ -5,5 +5,3 @@ __tests*
 .env.test
 coverage
 # Tests
-backend/tests/
-backend/test-support/
