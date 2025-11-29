@@ -3,6 +3,8 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const HabitTemplate = require('../models/HabitTemplate');
 const UserHabit = require('../models/UserHabit');
+const { createLimiter } = require('../middleware/rateLimitMiddleware');
+const { habitValidation, objectIdValidation, validate } = require('../middleware/validationMiddleware');
 
 // @route   GET /api/habits
 // @desc    Get all habits for the logged-in user
@@ -23,7 +25,7 @@ router.get('/', protect, async (req, res) => {
 // @route   POST /api/habits
 // @desc    Create a new habit (Creates a private Template + UserHabit)
 // @access  Private
-router.post('/', protect, async (req, res) => {
+router.post('/', createLimiter, protect, habitValidation, validate, async (req, res) => {
   const { name, category, description, dailyWindowStart, dailyWindowEnd, userIntention } = req.body;
 
   try {
@@ -79,7 +81,7 @@ router.post('/', protect, async (req, res) => {
 // @route   PUT /api/habits/:id
 // @desc    Update a user's habit
 // @access  Private
-router.put('/:id', protect, async (req, res) => {
+router.put('/:id', protect, objectIdValidation, validate, async (req, res) => {
   try {
     const { userIntention, dailyWindowStart, dailyWindowEnd, name, description, category } = req.body;
 
@@ -141,7 +143,7 @@ router.put('/:id', protect, async (req, res) => {
 // @route   DELETE /api/habits/:id
 // @desc    Delete a user's habit
 // @access  Private
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, objectIdValidation, validate, async (req, res) => {
   try {
     const userHabit = await UserHabit.findById(req.params.id).populate('templateId');
 

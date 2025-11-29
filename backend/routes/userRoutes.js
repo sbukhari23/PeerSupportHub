@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const { authLimiter } = require('../middleware/rateLimitMiddleware');
+const { registerValidation, loginValidation, validate } = require('../middleware/validationMiddleware');
 
 // @route   POST /api/users/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, registerValidation, validate, async (req, res) => {
   const { name, email, password, username, userType } = req.body;
 
   try {
@@ -49,7 +51,7 @@ router.post('/register', async (req, res) => {
 // @route   POST /api/users/login
 // @desc    Auth user & get token
 // @access  Public
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, loginValidation, validate, async (req, res) => {
   const { email, password } = req.body;
 
   try {
