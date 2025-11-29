@@ -23,6 +23,9 @@ app.use('/api/habits', require('./routes/habitRoutes'));
 // This new line tells the server to use habit log routes
 app.use('/api/logs', require('./routes/habitLogRoutes'));
 
+// This new line tells the server to use our profile routes
+app.use('/api/profile', require('./routes/profileRoutes'));
+
 // Group routes
 app.use('/api/groups', require('./routes/groupRoutes'));
 
