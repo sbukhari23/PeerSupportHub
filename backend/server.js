@@ -20,6 +20,8 @@ app.use('/api/users', require('./routes/userRoutes'));
 
 // This new line tells the server to use our habit routes
 app.use('/api/habits', require('./routes/habitRoutes'));
+// This new line tells the server to use habit log routes
+app.use('/api/logs', require('./routes/habitLogRoutes'));
 
 // Group routes
 app.use('/api/groups', require('./routes/groupRoutes'));

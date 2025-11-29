@@ -5,7 +5,6 @@ const habitTemplateSchema = mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
     },
     description: {
       type: String, 
@@ -31,6 +30,9 @@ const habitTemplateSchema = mongoose.Schema(
     timestamps: true,
   }
 );
+
+// enforce uniqueness only per creator + name so users can make identically-named templates
+habitTemplateSchema.index({ creatorId: 1, name: 1 }, { unique: true });
 
 const HabitTemplate = mongoose.model('HabitTemplate', habitTemplateSchema);
 module.exports = HabitTemplate;
