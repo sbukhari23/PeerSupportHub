@@ -9,9 +9,6 @@ const { apiLimiter } = require('./middleware/rateLimitMiddleware');
 // Load .env variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
-
 const app = express();
 
 // Security Middleware
@@ -47,4 +44,9 @@ app.use(errorHandler); // General error handler
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+  connectDB();
+  app.listen(PORT, console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;

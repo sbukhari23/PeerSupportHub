@@ -81,7 +81,12 @@ router.post('/', createLimiter, protect, habitValidation, validate, async (req, 
 // @route   PUT /api/habits/:id
 // @desc    Update a user's habit
 // @access  Private
-router.put('/:id', protect, objectIdValidation, validate, async (req, res) => {
+router.put(
+  '/:id',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   try {
     const { userIntention, dailyWindowStart, dailyWindowEnd, name, description, category } = req.body;
 
@@ -143,7 +148,12 @@ router.put('/:id', protect, objectIdValidation, validate, async (req, res) => {
 // @route   DELETE /api/habits/:id
 // @desc    Delete a user's habit
 // @access  Private
-router.delete('/:id', protect, objectIdValidation, validate, async (req, res) => {
+router.delete(
+  '/:id',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   try {
     const userHabit = await UserHabit.findById(req.params.id).populate('templateId');
 

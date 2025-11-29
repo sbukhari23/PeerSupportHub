@@ -78,7 +78,12 @@ router.get('/my', protect, async (req, res) => {
 // @route   GET /api/groups/:id
 // @desc    Get single group details
 // @access  Private
-router.get('/:id', protect, objectIdValidation, validate, async (req, res) => {
+router.get(
+  '/:id',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   try {
     const group = await Group.findById(req.params.id)
       .populate('members', 'name username email')
@@ -101,7 +106,12 @@ router.get('/:id', protect, objectIdValidation, validate, async (req, res) => {
 // @route   POST /api/groups/:id/join
 // @desc    Join a group
 // @access  Private
-router.post('/:id/join', protect, objectIdValidation, validate, async (req, res) => {
+router.post(
+  '/:id/join',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
 
@@ -136,7 +146,12 @@ router.post('/:id/join', protect, objectIdValidation, validate, async (req, res)
 // @route   DELETE /api/groups/:id/leave
 // @desc    Leave a group
 // @access  Private
-router.delete('/:id/leave', protect, objectIdValidation, validate, async (req, res) => {
+router.delete(
+  '/:id/leave',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
 
@@ -179,7 +194,12 @@ router.delete('/:id/leave', protect, objectIdValidation, validate, async (req, r
 // @route   PUT /api/groups/:id
 // @desc    Update group details (moderators only)
 // @access  Private
-router.put('/:id', protect, objectIdValidation, validate, async (req, res) => {
+router.put(
+  '/:id',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   const { name, topicFocus, type } = req.body;
 
   try {
@@ -214,7 +234,12 @@ router.put('/:id', protect, objectIdValidation, validate, async (req, res) => {
 // @route   DELETE /api/groups/:id
 // @desc    Delete a group (moderators only)
 // @access  Private
-router.delete('/:id', protect, objectIdValidation, validate, async (req, res) => {
+router.delete(
+  '/:id',
+  protect,
+  ...objectIdValidation('id'),
+  validate,
+  async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
 
