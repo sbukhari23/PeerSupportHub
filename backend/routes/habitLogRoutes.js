@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const DailyLog = require('../models/DailyLog');
 const UserHabit = require('../models/UserHabit');
+const { objectIdValidation, validate } = require('../middleware/validationMiddleware');
 
 // Helpers
 const getStartOfDay = (date = new Date()) => {
@@ -37,7 +38,7 @@ const inTimeWindow = (start, end, nowDate = new Date()) => {
 };
 
 // POST /api/logs/:habitId  -- Log a habit as completed today
-router.post('/:habitId', protect, async (req, res) => {
+router.post('/:habitId', protect, objectIdValidation, validate, async (req, res) => {
   const { habitId } = req.params;
   const { completionStatus = 'Completed', reflectionNote = '' } = req.body;
 
@@ -106,7 +107,7 @@ router.post('/:habitId', protect, async (req, res) => {
 });
 
 // GET /api/logs/user/:habitId  -- get all logs for a specific habit
-router.get('/user/:habitId', protect, async (req, res) => {
+router.get('/user/:habitId', protect, objectIdValidation, validate, async (req, res) => {
   const { habitId } = req.params;
 
   try {
@@ -125,7 +126,7 @@ router.get('/user/:habitId', protect, async (req, res) => {
 });
 
 // PUT /api/logs/:logId -- update a log (e.g., add reflection note). No completion status changes for now
-router.put('/:logId', protect, async (req, res) => {
+router.put('/:logId', protect, objectIdValidation, validate, async (req, res) => {
   const { logId } = req.params;
   const { reflectionNote } = req.body;
 
@@ -148,7 +149,7 @@ router.put('/:logId', protect, async (req, res) => {
 });
 
 // GET /api/logs/streak/:habitId -- Calculate current streak for this habit
-router.get('/streak/:habitId', protect, async (req, res) => {
+router.get('/streak/:habitId', protect, objectIdValidation, validate, async (req, res) => {
   const { habitId } = req.params;
   try {
     const userHabit = await UserHabit.findById(habitId);

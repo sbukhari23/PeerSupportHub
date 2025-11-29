@@ -5,6 +5,7 @@ const UserHabit = require('../models/UserHabit');
 const DailyLog = require('../models/DailyLog');
 const BuddyRequest = require('../models/BuddyRequest');
 const { protect } = require('../middleware/authMiddleware');
+const { objectIdValidation, validate } = require('../middleware/validationMiddleware');
 
 // @route   GET /api/profile/me
 // @desc    Get current user's profile
@@ -126,7 +127,7 @@ router.get('/buddy/requests', protect, async (req, res) => {
 // @route   GET /api/profile/buddy/:userId
 // @desc    View buddy's public profile
 // @access  Private
-router.get('/buddy/:userId', protect, async (req, res) => {
+router.get('/buddy/:userId', protect, objectIdValidation, validate, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId).select(
       'name username currentProgressScore'
@@ -149,7 +150,7 @@ router.get('/buddy/:userId', protect, async (req, res) => {
 // @route   POST /api/profile/buddy/request/:userId
 // @desc    Send a buddy request
 // @access  Private
-router.post('/buddy/request/:userId', protect, async (req, res) => {
+router.post('/buddy/request/:userId', protect, objectIdValidation, validate, async (req, res) => {
   try {
     const targetUserId = req.params.userId;
 
@@ -212,7 +213,7 @@ router.post('/buddy/request/:userId', protect, async (req, res) => {
 // @route   PUT /api/profile/buddy/accept/:requestId
 // @desc    Accept a buddy request
 // @access  Private
-router.put('/buddy/accept/:requestId', protect, async (req, res) => {
+router.put('/buddy/accept/:requestId', protect, objectIdValidation, validate, async (req, res) => {
   try {
     const requestId = req.params.requestId;
 
@@ -249,7 +250,7 @@ router.put('/buddy/accept/:requestId', protect, async (req, res) => {
 // @route   PUT /api/profile/buddy/reject/:requestId
 // @desc    Reject a buddy request
 // @access  Private
-router.put('/buddy/reject/:requestId', protect, async (req, res) => {
+router.put('/buddy/reject/:requestId', protect, objectIdValidation, validate, async (req, res) => {
   try {
     const requestId = req.params.requestId;
 
