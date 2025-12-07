@@ -4,6 +4,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Checkbox } from '../components/ui/checkbox';
 import { Eye, EyeOff, ArrowLeft, GraduationCap, Heart, Smartphone, Sparkles } from 'lucide-react';
+import { authAPI } from '../services/api';
 
 const focusAreas = [
   { id: 'study', label: 'Study & Learning', icon: GraduationCap },
@@ -13,12 +14,13 @@ const focusAreas = [
 ];
 
 export function Signup({ onNavigate }) {
-  const [selectedPlan, setSelectedPlan] = useState(() => {
+  const [selectedPlan] = useState(() => {
     return localStorage.getItem('selectedPlan') || 'free';
   });
   
   const [formData, setFormData] = useState({
     fullName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -27,10 +29,13 @@ export function Signup({ onNavigate }) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(''); // Clear error when typing
   };
 
   const handleFocusAreaSelect = (areaId) => {
@@ -41,31 +46,66 @@ export function Signup({ onNavigate }) {
     onNavigate('membership');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
+    // Username validation
+    if (!formData.username || formData.username.length < 3) {
+      setError('Username must be at least 3 characters long.');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      setError('Username can only contain letters, numbers, and underscores.');
+      setIsLoading(false);
+      return;
+    }
     
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      setIsLoading(false);
       return;
     }
     
     if (!formData.focusArea) {
-      alert('Please select a focus area!');
+      setError('Please select a focus area!');
+      setIsLoading(false);
       return;
     }
     
-    // Save user data
-    localStorage.setItem('userData', JSON.stringify({
-      ...formData,
-      plan: selectedPlan
-    }));
-    
-    // Route based on plan
-    if (selectedPlan === 'free') {
-      onNavigate('onboarding');
-    } else {
-      onNavigate('payment');
+    try {
+      // Call the real backend API
+      const userData = await authAPI.register(formData);
+      console.log('Registration successful:', userData);
+      
+      // Store additional data
+      localStorage.setItem('selectedPlan', selectedPlan);
+      localStorage.setItem('focusArea', formData.focusArea);
+      
+      // Navigate to dashboard after successful registration
+      onNavigate('dashboard');
+      
+    } catch (err) {
+      console.error('Registration failed:', err);
+      // Handle validation errors from express-validator
+      if (err.response?.data?.errors) {
+        const errorMessages = err.response.data.errors.map(e => e.msg).join('. ');
+        setError(errorMessages);
+      } else {
+        setError(err.response?.data?.msg || 'Registration failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -147,6 +187,22 @@ export function Signup({ onNavigate }) {
                 placeholder="Enter your full name"
                 className="w-full px-6 py-6 text-lg rounded-xl border-2 border-gray-300 focus:border-black transition-all bg-gray-50"
               />
+            </div>
+
+            {/* Username Field */}
+            <div className="space-y-3">
+              <Label htmlFor="username" className="text-lg">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                value={formData.username}
+                onChange={handleInputChange}
+                required
+                placeholder="Choose a unique username"
+                className="w-full px-6 py-6 text-lg rounded-xl border-2 border-gray-300 focus:border-black transition-all bg-gray-50"
+              />
+              <p className="text-sm text-gray-500">Only letters, numbers, and underscores. 3-20 characters.</p>
             </div>
 
             {/* Email Field */}
@@ -269,12 +325,20 @@ export function Signup({ onNavigate }) {
               </Label>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full rounded-full bg-black hover:bg-gray-800 px-10 py-7 text-xl shadow-xl hover:shadow-2xl transition-all"
+              disabled={isLoading}
+              className="w-full rounded-full bg-black hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed px-10 py-7 text-xl shadow-xl hover:shadow-2xl transition-all"
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
             {/* Terms & Privacy Note */}

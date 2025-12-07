@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
+import { authAPI } from '../services/api';
 
 export function Login({ onNavigate }) {
   const [formData, setFormData] = useState({
@@ -10,60 +11,39 @@ export function Login({ onNavigate }) {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(''); // Clear error when typing
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
     
-    // Test credentials for quick dashboard access
-    const TEST_CREDENTIALS = [
-      { email: 'demo@test.com', password: 'demo123', plan: 'free' },
-      { email: 'growth@test.com', password: 'demo123', plan: 'growth' },
-      { email: 'pro@test.com', password: 'demo123', plan: 'pro' }
-    ];
-    
-    // Check if credentials match test accounts
-    const testAccount = TEST_CREDENTIALS.find(
-      cred => cred.email === formData.email && cred.password === formData.password
-    );
-    
-    if (testAccount) {
-      // Set up mock user data for test account
-      const mockUserData = {
-        fullName: testAccount.plan === 'free' ? 'Demo User' : 
-                  testAccount.plan === 'growth' ? 'Growth User' : 'Pro User',
-        email: testAccount.email,
-        plan: testAccount.plan,
-        focusArea: 'study',
-        receiveUpdates: true,
-        planStatus: 'active',
-        loginDate: new Date().toISOString()
-      };
+    try {
+      // Call the real backend API
+      const userData = await authAPI.login(formData.email, formData.password);
+      console.log('Login successful:', userData);
       
-      const mockOnboardingData = {
-        habits: ['study', 'exercise', 'reading'],
-        group: 'study-students',
-        completedAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem('userData', JSON.stringify(mockUserData));
-      localStorage.setItem('onboardingData', JSON.stringify(mockOnboardingData));
-      localStorage.setItem('selectedPlan', testAccount.plan);
-      
-      // Navigate to dashboard
+      // Navigate to dashboard on success
       onNavigate('dashboard');
-    } else {
-      // Show error for invalid credentials
-      alert('Invalid credentials. Use test accounts:\n\n' +
-            '📧 demo@test.com (Free Plan)\n' +
-            '📧 growth@test.com (Growth Plan)\n' +
-            '📧 pro@test.com (Pro Plan)\n\n' +
-            '🔑 Password: demo123\n\n' +
-            'Or create a new account to go through the full onboarding flow.');
+      
+    } catch (err) {
+      console.error('Login failed:', err);
+      // Handle validation errors from express-validator
+      if (err.response?.data?.errors) {
+        const errorMessages = err.response.data.errors.map(e => e.msg).join('. ');
+        setError(errorMessages);
+      } else {
+        setError(err.response?.data?.msg || 'Invalid email or password. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,15 +79,15 @@ export function Login({ onNavigate }) {
                 <div className="text-sm text-blue-800 space-y-2">
                   <p className="font-mono bg-white rounded px-3 py-2 border border-blue-200">
                     <strong>Free Plan:</strong><br/>
-                    demo@test.com / demo123
+                    demo@test.com / demo1234
                   </p>
                   <p className="font-mono bg-white rounded px-3 py-2 border border-blue-200">
                     <strong>Growth Plan:</strong><br/>
-                    growth@test.com / demo123
+                    growth@test.com / demo1234
                   </p>
                   <p className="font-mono bg-white rounded px-3 py-2 border border-blue-200">
                     <strong>Pro Plan:</strong><br/>
-                    pro@test.com / demo123
+                    pro@test.com / demo1234
                   </p>
                 </div>
               </div>
@@ -184,12 +164,20 @@ export function Login({ onNavigate }) {
               </button>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full rounded-full bg-black hover:bg-gray-800 px-10 py-7 text-xl shadow-xl hover:shadow-2xl transition-all"
+              disabled={isLoading}
+              className="w-full rounded-full bg-black hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed px-10 py-7 text-xl shadow-xl hover:shadow-2xl transition-all"
             >
-              Log In
+              {isLoading ? 'Logging in...' : 'Log In'}
             </Button>
           </form>
 

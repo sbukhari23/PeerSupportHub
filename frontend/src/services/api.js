@@ -20,15 +20,39 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle token expiration
+// Handle token expiration (only for authenticated routes, not login/register)
+// We store a callback to navigate without full page reload
+let logoutCallback = null;
+
+export const setLogoutCallback = (callback) => {
+  logoutCallback = callback;
+};
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('userData');
-      window.location.href = '/'; // Redirect to login
+    // Only handle 401 if it's NOT a login or register attempt
+    const isAuthRoute = error.config?.url?.includes('/users/login') || 
+                        error.config?.url?.includes('/users/register');
+    
+    // Don't auto-logout - just reject the promise
+    // The token might still be valid, just the endpoint might not exist
+    // Only clear token if it's definitely an auth failure on a protected route
+    if (error.response?.status === 401 && !isAuthRoute) {
+      // Check if the error message indicates token is actually invalid
+      const errorMessage = error.response?.data?.message || '';
+      const isTokenInvalid = errorMessage.toLowerCase().includes('token') ||
+                             errorMessage.toLowerCase().includes('unauthorized') ||
+                             errorMessage.toLowerCase().includes('expired');
+      
+      if (isTokenInvalid) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
+        if (logoutCallback) {
+          logoutCallback('login');
+        }
+      }
+      // Otherwise, just let the error propagate - endpoint might not exist
     }
     return Promise.reject(error);
   }
@@ -42,7 +66,7 @@ export const authAPI = {
       name: userData.fullName,
       email: userData.email,
       password: userData.password,
-      username: userData.email.split('@')[0], // Generate username from email
+      username: userData.username, // Use username provided by user
     });
     
     // Store token and user data

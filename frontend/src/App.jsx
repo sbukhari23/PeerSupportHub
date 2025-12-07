@@ -11,13 +11,23 @@ import { Contact } from './pages/Contact';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ForgotPassword } from './pages/ForgotPassword';
-// import { Payment } from './pages/Payment';
-// import { Onboarding } from './pages/Onboarding';
-// import { Dashboard } from './pages/Dashboard';
+import { Dashboard } from './pages/Dashboard';
+import { Payment } from './pages/Payment';
+import { Onboarding } from './pages/Onboarding';
 import { Footer } from './pages/Footer';
+import { authAPI } from './services/api';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  // Check if user is already logged in on initial load
+  const getInitialPage = () => {
+    // If user is authenticated, take them to dashboard
+    if (authAPI.isAuthenticated()) {
+      return 'dashboard';
+    }
+    return 'home';
+  };
+
+  const [currentPage, setCurrentPage] = useState(getInitialPage);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -41,14 +51,14 @@ export default function App() {
         return <Signup onNavigate={setCurrentPage} />;
       case 'forgot-password':
         return <ForgotPassword onNavigate={setCurrentPage} />;
-      // case 'payment':
-      //   return <Payment onNavigate={setCurrentPage} />;
-      // case 'onboarding':
-      //   return <Onboarding onNavigate={setCurrentPage} />;
-      // case 'dashboard':
-      //   return <Dashboard onNavigate={setCurrentPage} />;
+      case 'dashboard':
+        return <Dashboard onNavigate={setCurrentPage} />;
+      case 'payment':
+        return <Payment onNavigate={setCurrentPage} />;
+      case 'onboarding':
+        return <Onboarding onNavigate={setCurrentPage} />;
       default:
-        return <Home />;
+        return <Home onNavigate={setCurrentPage} />;
     }
   };
 
