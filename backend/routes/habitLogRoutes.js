@@ -37,6 +37,27 @@ const inTimeWindow = (start, end, nowDate = new Date()) => {
   }
 };
 
+// Helper to calculate and update streak for a habit
+const calculateStreakForHabit = async (habitId) => {
+  let streakCount = 0;
+  const today = getStartOfDay();
+  let checkingDay = new Date(today);
+  const maxStreakCheck = 365; // Prevent infinite loops
+
+  for (let i = 0; i < maxStreakCheck; i++) {
+    const log = await DailyLog.findOne({ 
+      userHabitId: habitId, 
+      logDate: checkingDay, 
+      completionStatus: { $in: ['Completed', 'Paused'] } 
+    });
+    if (!log) break;
+    streakCount++;
+    checkingDay = getStartOfDay(new Date(checkingDay.getTime() - 24 * 60 * 60 * 1000));
+  }
+
+  return streakCount;
+};
+
 // POST /api/logs/:habitId  -- Log a habit as completed today
 router.post(
   '/:habitId',
@@ -156,6 +177,16 @@ router.put(
     if (reflectionNote !== undefined) log.reflectionNote = reflectionNote;
 
     const updated = await log.save();
+
+    // Recalculate streak to keep history consistent
+    const habitId = log.userHabitId._id;
+    const newStreak = await calculateStreakForHabit(habitId);
+    const userHabit = await UserHabit.findById(habitId);
+    if (userHabit && userHabit.streak !== newStreak) {
+      userHabit.streak = newStreak;
+      await userHabit.save();
+    }
+
     res.json(updated);
   } catch (err) {
     console.error(err.message);
@@ -178,22 +209,8 @@ router.get(
       return res.status(403).json({ msg: 'Not authorized to view this streak' });
     }
 
-    // Calculate streak by scanning consecutive completed/paused logs up to today
-    let streakCount = 0;
-    const today = getStartOfDay();
-    let checkingDay = new Date(today);
-    const maxStreakCheck = 365; // Prevent infinite loops
-
-    for (let i = 0; i < maxStreakCheck; i++) {
-      const log = await DailyLog.findOne({ 
-        userHabitId: habitId, 
-        logDate: checkingDay, 
-        completionStatus: { $in: ['Completed', 'Paused'] } 
-      });
-      if (!log) break;
-      streakCount++;
-      checkingDay = getStartOfDay(new Date(checkingDay.getTime() - 24 * 60 * 60 * 1000));
-    }
+    // Calculate streak using helper function
+    const streakCount = await calculateStreakForHabit(habitId);
 
     // Keep in sync with stored streak
     if (userHabit.streak !== streakCount) {
@@ -202,6 +219,57 @@ router.get(
     }
 
     res.json({ streak: streakCount });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// DELETE /api/logs/:logId -- Delete a log (undo today's submission)
+router.delete(
+  '/:logId',
+  protect,
+  ...objectIdValidation('logId'),
+  validate,
+  async (req, res) => {
+  const { logId } = req.params;
+
+  try {
+    const log = await DailyLog.findById(logId).populate('userHabitId');
+    if (!log) return res.status(404).json({ msg: 'Log not found' });
+
+    // Check authorization
+    if (String(log.userHabitId.userId) !== String(req.user._id)) {
+      return res.status(403).json({ msg: 'Not authorized to delete this log' });
+    }
+
+    // Optional: Only allow deletion of today's log (business rule)
+    const today = getStartOfDay();
+    const logDate = getStartOfDay(log.logDate);
+    if (logDate.getTime() !== today.getTime()) {
+      return res.status(400).json({ msg: 'Can only delete today\'s log' });
+    }
+
+    const habitId = log.userHabitId._id;
+
+    // Delete the log
+    await log.deleteOne();
+
+    // Recalculate streak after deletion
+    const newStreak = await calculateStreakForHabit(habitId);
+    const userHabit = await UserHabit.findById(habitId);
+    if (userHabit) {
+      userHabit.streak = newStreak;
+      
+      // If the deleted log was paused, decrement compassionate pause count
+      if (log.completionStatus === 'Paused' && userHabit.compassionatePauseCount > 0) {
+        userHabit.compassionatePauseCount -= 1;
+      }
+      
+      await userHabit.save();
+    }
+
+    res.json({ msg: 'Log deleted successfully', newStreak });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
