@@ -61,10 +61,12 @@ const userSchema = mongoose.Schema(
     },
 
     // --- RELATIONSHIPS ---
-    buddyId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
-    },
+    buddies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', 
+      },
+    ],
     pods: [
       {
         type: mongoose.Schema.Types.ObjectId,

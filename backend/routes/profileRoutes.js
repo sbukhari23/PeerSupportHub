@@ -95,10 +95,15 @@ router.get('/stats', protect, async (req, res) => {
     // 4. Current progress score
     const currentProgressScore = req.user.currentProgressScore || 0;
 
+    // 5. Total days logged
+    const totalDaysLogged = totalLogs;
+
     res.json({
-      activeHabits: activeHabitsCount,
+      totalActiveHabits: activeHabitsCount,
       longestStreak,
-      completionRate: Math.round(completionRate * 10) / 10, // Round to 1 decimal
+      completionRate: `${Math.round(completionRate * 10) / 10}%`, // Display-friendly percentage
+      completionRateRaw: Math.round(completionRate * 10) / 10, // Raw number for calculations
+      totalDaysLogged,
       currentProgressScore,
     });
   } catch (err) {
@@ -106,6 +111,35 @@ router.get('/stats', protect, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// @route   GET /api/profile/:userId
+// @desc    View another user's public profile
+// @access  Private
+router.get(
+  '/:userId',
+  protect,
+  ...objectIdValidation('userId'),
+  validate,
+  async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select(
+      'name username onboardingIntent'
+    ); // Only return public info (name, username, bio)
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
+
 
 // @route   GET /api/profile/buddy/requests
 // @desc    Get all pending buddy requests
@@ -124,8 +158,23 @@ router.get('/buddy/requests', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/profile/buddies
+// @desc    Get all current user's buddies
+// @access  Private
+router.get('/buddies', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('buddies', 'name username currentProgressScore onboardingIntent');
+
+    res.json(user.buddies || []);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // @route   GET /api/profile/buddy/:userId
-// @desc    View buddy's public profile
+// @desc    View specific buddy's public profile (validates buddy relationship)
 // @access  Private
 router.get(
   '/buddy/:userId',
@@ -134,8 +183,16 @@ router.get(
   validate,
   async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select(
-      'name username currentProgressScore'
+    const buddyUserId = req.params.userId;
+
+    // Verify this user is actually your buddy
+    const currentUser = await User.findById(req.user._id);
+    if (!currentUser.buddies || !currentUser.buddies.some(id => id.toString() === buddyUserId)) {
+      return res.status(403).json({ msg: 'This user is not your buddy' });
+    }
+
+    const user = await User.findById(buddyUserId).select(
+      'name username currentProgressScore onboardingIntent'
     ); // Only return public info
 
     if (!user) {
@@ -175,8 +232,8 @@ router.post(
 
     // Check if already buddies
     if (
-      targetUser.buddyId &&
-      targetUser.buddyId.toString() === req.user._id.toString()
+      targetUser.buddies &&
+      targetUser.buddies.some(buddyId => buddyId.toString() === req.user._id.toString())
     ) {
       return res.status(400).json({ msg: 'You are already buddies' });
     }
@@ -251,9 +308,13 @@ router.put(
     request.status = 'Accepted';
     await request.save();
 
-    // 2. Update Both Users
-    await User.findByIdAndUpdate(req.user._id, { buddyId: request.sender });
-    await User.findByIdAndUpdate(request.sender, { buddyId: req.user._id });
+    // 2. Add to buddies array for both users (without duplicates)
+    await User.findByIdAndUpdate(req.user._id, { 
+      $addToSet: { buddies: request.sender }
+    });
+    await User.findByIdAndUpdate(request.sender, { 
+      $addToSet: { buddies: req.user._id }
+    });
 
     res.json({ msg: 'Buddy request accepted' });
   } catch (err) {

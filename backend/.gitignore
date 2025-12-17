@@ -5,3 +5,6 @@ __tests*
 .env.test
 coverage
 # Tests
+test-api-endpoints.js
+bun.lock
+TEST-API-README.md
