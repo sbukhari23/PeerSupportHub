@@ -14,6 +14,11 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Payment } from './pages/Payment';
 import { Onboarding } from './pages/Onboarding';
+import { Groups } from './pages/Groups';
+import { GroupChat } from './pages/GroupChat';
+import { Buddies } from './pages/Buddies';
+import { Messages } from './pages/Messages';
+import { HabitManager } from './pages/HabitManager';
 import { Footer } from './pages/Footer';
 import { authAPI } from './services/api';
 
@@ -30,6 +35,16 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(getInitialPage);
 
   const renderPage = () => {
+    // Handle dynamic routes like group-chat-{id} and messages-{id}
+    if (currentPage.startsWith('group-chat-')) {
+      const groupId = currentPage.replace('group-chat-', '');
+      return <GroupChat groupId={groupId} onNavigate={setCurrentPage} />;
+    }
+    if (currentPage.startsWith('messages-')) {
+      const userId = currentPage.replace('messages-', '');
+      return <Messages userId={userId} onNavigate={setCurrentPage} />;
+    }
+
     switch (currentPage) {
       case 'home':
         return <Home onNavigate={setCurrentPage} />;
@@ -57,6 +72,14 @@ export default function App() {
         return <Payment onNavigate={setCurrentPage} />;
       case 'onboarding':
         return <Onboarding onNavigate={setCurrentPage} />;
+      case 'groups':
+        return <Groups onNavigate={setCurrentPage} />;
+      case 'buddies':
+        return <Buddies onNavigate={setCurrentPage} />;
+      case 'messages':
+        return <Messages onNavigate={setCurrentPage} />;
+      case 'habits':
+        return <HabitManager onNavigate={setCurrentPage} />;
       default:
         return <Home onNavigate={setCurrentPage} />;
     }
@@ -69,8 +92,12 @@ export default function App() {
     'forgot-password', 
     'payment', 
     'onboarding', 
-    'dashboard'
-  ].includes(currentPage);
+    'dashboard',
+    'groups',
+    'buddies',
+    'messages',
+    'habits',
+  ].includes(currentPage) || currentPage.startsWith('group-chat-') || currentPage.startsWith('messages-');
 
   return (
     <div className="min-h-screen bg-white">

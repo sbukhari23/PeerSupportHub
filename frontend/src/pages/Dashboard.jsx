@@ -12,16 +12,23 @@ import {
   LogOut,
   Menu,
   X,
-  Crown
+  Crown,
+  MessageCircle,
+  Flame,
+  UserPlus,
+  Bell,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { authAPI, habitsAPI, groupsAPI, setLogoutCallback } from '../services/api';
+import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, setLogoutCallback } from '../services/api';
 
 export function Dashboard({ onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [checkedHabits, setCheckedHabits] = useState([]);
   const [habits, setHabits] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [buddies, setBuddies] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Get user data from localStorage (persists across page reloads and tabs)
@@ -51,12 +58,18 @@ export function Dashboard({ onNavigate }) {
     // Fetch data from API
     const fetchData = async () => {
       try {
-        const [habitsData, groupsData] = await Promise.all([
+        const [habitsData, groupsData, statsData, buddiesData, requestsData] = await Promise.all([
           habitsAPI.getHabits().catch(() => []),
-          groupsAPI.getGroups().catch(() => [])
+          groupsAPI.getMyGroups().catch(() => []),
+          profileAPI.getStats().catch(() => null),
+          profileAPI.getBuddies().catch(() => []),
+          profileAPI.getBuddyRequests().catch(() => []),
         ]);
         setHabits(habitsData);
         setGroups(groupsData);
+        setStats(statsData);
+        setBuddies(buddiesData);
+        setPendingRequests(requestsData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -71,25 +84,29 @@ export function Dashboard({ onNavigate }) {
   const todayHabits = habits.length > 0 ? habits.map(h => ({
     id: h._id,
     name: h.templateId?.name || h.name || 'Habit',
-    completed: false
-  })) : [
-    { id: '1', name: 'Study for 30 minutes', completed: false },
-    { id: '2', name: 'Exercise daily', completed: false },
-    { id: '3', name: 'Read for 20 minutes', completed: false },
-  ];
+    completed: false,
+    streak: h.streak || 0,
+  })) : [];
 
-  const weekProgress = 65; // Mock progress percentage
-  const currentStreak = 7; // Mock streak
+  const weekProgress = stats?.completionRateRaw || 0;
+  const currentStreak = stats?.longestStreak || 0;
 
-  const handleHabitToggle = (habitId) => {
-    setCheckedHabits(prev => {
-      if (prev.includes(habitId)) {
-        return prev.filter(id => id !== habitId);
-      } else {
-        toast.success('Great job! Keep it up! 🎯');
-        return [...prev, habitId];
-      }
-    });
+  const handleHabitToggle = async (habitId) => {
+    if (checkedHabits.includes(habitId)) {
+      return; // Already logged today
+    }
+    
+    try {
+      await habitLogsAPI.createLog(habitId, { completionStatus: 'Completed' });
+      setCheckedHabits(prev => [...prev, habitId]);
+      toast.success('Great job! Keep it up! 🎯');
+      
+      // Refresh stats
+      const newStats = await profileAPI.getStats().catch(() => null);
+      if (newStats) setStats(newStats);
+    } catch (error) {
+      toast.error(error.response?.data?.msg || 'Failed to log habit');
+    }
   };
 
   const handleLogout = () => {
@@ -127,20 +144,34 @@ export function Dashboard({ onNavigate }) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
-              <button className="text-gray-600 hover:text-gray-900 transition-colors">
+              <button 
+                onClick={() => onNavigate('habits')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
                 My Habits
               </button>
               <button 
-                onClick={() => onNavigate('community')}
+                onClick={() => onNavigate('groups')}
                 className="text-gray-600 hover:text-gray-900 transition-colors"
               >
                 Groups
               </button>
               <button 
-                onClick={() => onNavigate('blogs')}
+                onClick={() => onNavigate('buddies')}
+                className="text-gray-600 hover:text-gray-900 transition-colors relative"
+              >
+                Buddies
+                {pendingRequests.length > 0 && (
+                  <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {pendingRequests.length}
+                  </span>
+                )}
+              </button>
+              <button 
+                onClick={() => onNavigate('messages')}
                 className="text-gray-600 hover:text-gray-900 transition-colors"
               >
-                Resources
+                <MessageCircle className="w-5 h-5" />
               </button>
               <button className="text-gray-600 hover:text-gray-900 transition-colors">
                 <Settings className="w-5 h-5" />
@@ -167,20 +198,34 @@ export function Dashboard({ onNavigate }) {
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
             <nav className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-200 pt-4">
-              <button className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2">
+              <button 
+                onClick={() => onNavigate('habits')}
+                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
+              >
                 My Habits
               </button>
               <button 
-                onClick={() => onNavigate('community')}
+                onClick={() => onNavigate('groups')}
                 className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
               >
                 Groups
               </button>
               <button 
-                onClick={() => onNavigate('blogs')}
+                onClick={() => onNavigate('buddies')}
+                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2 flex items-center"
+              >
+                Buddies
+                {pendingRequests.length > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {pendingRequests.length}
+                  </span>
+                )}
+              </button>
+              <button 
+                onClick={() => onNavigate('messages')}
                 className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
               >
-                Resources
+                Messages
               </button>
               <button className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2">
                 Settings
@@ -242,17 +287,18 @@ export function Dashboard({ onNavigate }) {
               </div>
 
               <div className="space-y-3">
-                {todayHabits.map((habit) => {
+                {todayHabits.length > 0 ? todayHabits.map((habit) => {
                   const isCompleted = checkedHabits.includes(habit.id);
                   return (
                     <button
                       key={habit.id}
                       onClick={() => handleHabitToggle(habit.id)}
+                      disabled={isCompleted}
                       className={`
                         w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left
                         ${isCompleted 
-                          ? 'border-green-500 bg-green-50' 
-                          : 'border-gray-300 hover:border-gray-400 bg-white'
+                          ? 'border-green-500 bg-green-50 cursor-default' 
+                          : 'border-gray-300 hover:border-gray-400 bg-white cursor-pointer'
                         }
                       `}
                     >
@@ -261,15 +307,29 @@ export function Dashboard({ onNavigate }) {
                       ) : (
                         <Circle className="w-6 h-6 text-gray-400 flex-shrink-0" />
                       )}
-                      <span className={`text-lg ${isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                      <span className={`flex-1 text-lg ${isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                         {habit.name}
                       </span>
+                      {habit.streak > 0 && (
+                        <span className="flex items-center gap-1 text-orange-500 text-sm">
+                          <Flame className="w-4 h-4" />
+                          {habit.streak}
+                        </span>
+                      )}
                     </button>
                   );
-                })}
+                }) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Target className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <p>No habits yet. Add your first habit to get started!</p>
+                  </div>
+                )}
               </div>
 
-              <Button className="w-full mt-6 rounded-full bg-black hover:bg-gray-800 py-6 text-lg">
+              <Button 
+                onClick={() => onNavigate('habits')}
+                className="w-full mt-6 rounded-full bg-black hover:bg-gray-800 py-6 text-lg"
+              >
                 + Add New Habit
               </Button>
             </Card>
@@ -319,16 +379,68 @@ export function Dashboard({ onNavigate }) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Total Habits</span>
-                  <span className="font-bold text-lg">{habits.length || 3}</span>
+                  <span className="font-bold text-lg">{stats?.totalActiveHabits || habits.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Completed</span>
-                  <span className="font-bold text-lg text-green-600">{completedToday}</span>
+                  <span className="text-gray-600">Longest Streak</span>
+                  <span className="font-bold text-lg text-orange-500 flex items-center gap-1">
+                    {stats?.longestStreak || 0} <Flame className="w-4 h-4" />
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Success Rate</span>
-                  <span className="font-bold text-lg">{progressPercent}%</span>
+                  <span className="text-gray-600">Completion Rate</span>
+                  <span className="font-bold text-lg text-green-600">{stats?.completionRate || '0%'}</span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Days Logged</span>
+                  <span className="font-bold text-lg">{stats?.totalDaysLogged || 0}</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Buddies Card */}
+            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Accountability Buddies
+              </h3>
+              
+              <div className="space-y-3">
+                {buddies.length > 0 ? (
+                  buddies.slice(0, 3).map((buddy) => (
+                    <div key={buddy._id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold">
+                        {buddy.name?.charAt(0) || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{buddy.name}</div>
+                      </div>
+                      <button 
+                        onClick={() => onNavigate(`messages-${buddy._id}`)}
+                        className="p-1.5 hover:bg-gray-200 rounded-full"
+                      >
+                        <MessageCircle className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    <p>No buddies yet</p>
+                  </div>
+                )}
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => onNavigate('buddies')}
+                  className="w-full rounded-full border-2 border-black relative"
+                >
+                  {pendingRequests.length > 0 && (
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {pendingRequests.length}
+                    </span>
+                  )}
+                  {buddies.length > 0 ? 'View All Buddies' : 'Find Buddies'}
+                </Button>
               </div>
             </Card>
 
@@ -342,10 +454,14 @@ export function Dashboard({ onNavigate }) {
               <div className="space-y-3">
                 {groups.length > 0 ? (
                   groups.slice(0, 2).map((group, index) => (
-                    <div key={group._id || index} className="p-3 bg-gray-50 rounded-lg">
+                    <button 
+                      key={group._id || index} 
+                      onClick={() => onNavigate(`group-chat-${group._id}`)}
+                      className="w-full p-3 bg-gray-50 rounded-lg text-left hover:bg-gray-100 transition-colors"
+                    >
                       <div className="font-bold">{group.name}</div>
                       <div className="text-sm text-gray-600">{group.members?.length || 0} members</div>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <div className="p-3 bg-gray-50 rounded-lg">
@@ -356,7 +472,7 @@ export function Dashboard({ onNavigate }) {
                 
                 <Button 
                   variant="outline"
-                  onClick={() => onNavigate('community')}
+                  onClick={() => onNavigate('groups')}
                   className="w-full rounded-full border-2 border-black"
                 >
                   {groups.length > 0 ? 'View All Groups' : 'Browse Groups'}
