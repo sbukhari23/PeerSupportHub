@@ -61,18 +61,25 @@ export function Dashboard({ onNavigate }) {
     // Fetch data from API
     const fetchData = async () => {
       try {
-        const [habitsData, groupsData, statsData, buddiesData, requestsData] = await Promise.all([
+        const [habitsData, groupsData, statsData, buddiesData, requestsData, todayLogsData] = await Promise.all([
           habitsAPI.getHabits().catch(() => []),
           groupsAPI.getMyGroups().catch(() => []),
           profileAPI.getStats().catch(() => null),
           profileAPI.getBuddies().catch(() => []),
           profileAPI.getBuddyRequests().catch(() => []),
+          habitLogsAPI.getTodayLogs().catch(() => []),
         ]);
         setHabits(habitsData);
         setGroups(groupsData);
         setStats(statsData);
         setBuddies(buddiesData);
         setPendingRequests(requestsData);
+        
+        // Populate checkedHabits with habits that were already logged today
+        const completedHabitIds = todayLogsData
+          .filter(log => log.completionStatus === 'Completed')
+          .map(log => log.userHabitId);
+        setCheckedHabits(completedHabitIds);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

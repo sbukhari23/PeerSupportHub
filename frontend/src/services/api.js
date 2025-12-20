@@ -281,6 +281,12 @@ export const habitLogsAPI = {
     return response.data;
   },
 
+  // Get all of today's logs for the current user
+  getTodayLogs: async () => {
+    const response = await api.get('/logs/today');
+    return response.data;
+  },
+
   // Get all logs for a specific habit
   getHabitLogs: async (habitId) => {
     const response = await api.get(`/logs/user/${habitId}`);
