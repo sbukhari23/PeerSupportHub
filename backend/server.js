@@ -66,6 +66,18 @@ app.use('/api/reflections', require('./routes/reflectionRoutes'));
 // Feedback Mirror routes
 app.use('/api/feedback', require('./routes/feedbackMirrorRoutes'));
 
+// Admin routes
+app.use('/api/admin', require('./routes/adminRoutes'));
+
+// Mentor routes
+app.use('/api/mentors', require('./routes/mentorRoutes'));
+
+// Blog routes
+app.use('/api/blogs', require('./routes/blogRoutes'));
+
+// FAQ routes
+app.use('/api/faqs', require('./routes/faqRoutes'));
+
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
