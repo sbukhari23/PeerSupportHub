@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "upload": "git add -A && git commit -m 'backend' && git push origin feature-backend",
+    "upload": "git add -A && git commit -m 'backend push using npm run upload' && git push origin feature-backend",
     "start": "node server.js",
     "server": "nodemon server.js",
     "test": "jest --runInBand --verbose",
