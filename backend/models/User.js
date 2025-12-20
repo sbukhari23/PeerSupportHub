@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = mongoose.Schema(
   {
@@ -23,6 +24,24 @@ const userSchema = mongoose.Schema(
     password: {
       type: String,
       // Not required: true, because Google users won't have one
+    },
+
+    // --- EMAIL VERIFICATION & PASSWORD RESET ---
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpires: {
+      type: Date,
+    },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpires: {
+      type: Date,
     },
 
     // --- PROFILE FIELDS (From your Schema) ---
@@ -94,6 +113,22 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+// 3. Generate email verification token
+userSchema.methods.generateEmailVerificationToken = function () {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.emailVerificationToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+  return token; // Return unhashed token to send via email
+};
+
+// 4. Generate password reset token
+userSchema.methods.generatePasswordResetToken = function () {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  return token; // Return unhashed token to send via email
+};
+
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

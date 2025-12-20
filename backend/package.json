@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "upload": "git add -A && git commit -m 'backend' && git push origin feature-backend",
     "start": "node server.js",
     "server": "nodemon server.js",
     "test": "jest --runInBand --verbose",
@@ -24,6 +25,7 @@
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
@@ -32,6 +34,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.4",
     "multer": "^2.0.2",
+    "nodemailer": "^7.0.11",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
