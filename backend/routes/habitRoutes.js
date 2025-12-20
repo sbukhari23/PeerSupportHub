@@ -188,4 +188,20 @@ router.delete(
   }
 });
 
+// @route   GET /api/habits/public
+// @desc    Get all public habit templates
+// @access  Private
+router.get('/public', protect, async (req, res) => {
+  try {
+    const publicTemplates = await HabitTemplate.find({ isPublic: true })
+      .populate('creatorId', 'name username')
+      .sort({ createdAt: -1 });
+    
+    res.json(publicTemplates);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
