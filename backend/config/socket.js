@@ -31,6 +31,9 @@ const setupSocketHandlers = (io) => {
   io.on('connection', (socket) => {
     console.log(`User connected: ${socket.userId}`);
 
+    // User joins their personal notification room
+    socket.join(`user-${socket.userId}`);
+
     // ==================== GROUP MESSAGING EVENTS ====================
 
     // Join group room
@@ -186,10 +189,35 @@ const setupSocketHandlers = (io) => {
       });
     });
 
+    // ==================== NOTIFICATION EVENTS ====================
+
+    // Mark notification as read (client can do this via REST API or socket)
+    socket.on('mark-notification-read', async (notificationId) => {
+      try {
+        const Notification = require('../models/Notification');
+        const notification = await Notification.findOne({
+          _id: notificationId,
+          userId: socket.userId,
+        });
+
+        if (notification) {
+          notification.isRead = true;
+          await notification.save();
+          
+          // Emit updated unread count
+          const unreadCount = await Notification.getUnreadCount(socket.userId);
+          socket.emit('notification-count-updated', { count: unreadCount });
+        }
+      } catch (error) {
+        socket.emit('error', { message: error.message });
+      }
+    });
+
     // ==================== DISCONNECT ====================
 
     // Handle disconnect
     socket.on('disconnect', () => {
+      socket.leave(`user-${socket.userId}`);
       console.log(`User disconnected: ${socket.userId}`);
     });
   });
