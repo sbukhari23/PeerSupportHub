@@ -19,11 +19,16 @@ import { GroupChat } from './pages/GroupChat';
 import { Buddies } from './pages/Buddies';
 import { Messages } from './pages/Messages';
 import { HabitManager } from './pages/HabitManager';
+import { Challenges } from './pages/Challenges';
+import { Reflections } from './pages/Reflections';
+import { Mentors } from './pages/Mentors';
+import { Settings } from './pages/Settings';
+import { AdminPanel } from './pages/AdminPanel';
 import { Footer } from './pages/Footer';
 import { authAPI } from './services/api';
 
 // Pages that require authentication
-const protectedPages = ['dashboard', 'groups', 'buddies', 'messages', 'habits', 'onboarding', 'payment'];
+const protectedPages = ['dashboard', 'groups', 'buddies', 'messages', 'habits', 'onboarding', 'payment', 'challenges', 'reflections', 'mentors', 'settings', 'admin'];
 
 export default function App() {
   // Get initial page from URL hash or default based on auth status
@@ -130,6 +135,16 @@ export default function App() {
         return <Messages onNavigate={navigate} />;
       case 'habits':
         return <HabitManager onNavigate={navigate} />;
+      case 'challenges':
+        return <Challenges onNavigate={navigate} />;
+      case 'reflections':
+        return <Reflections onNavigate={navigate} />;
+      case 'mentors':
+        return <Mentors onNavigate={navigate} />;
+      case 'settings':
+        return <Settings onNavigate={navigate} />;
+      case 'admin':
+        return <AdminPanel onNavigate={navigate} />;
       default:
         return <Home onNavigate={navigate} />;
     }
@@ -147,6 +162,11 @@ export default function App() {
     'buddies',
     'messages',
     'habits',
+    'challenges',
+    'reflections',
+    'mentors',
+    'settings',
+    'admin',
   ].includes(currentPage) || currentPage.startsWith('group-chat-') || currentPage.startsWith('messages-');
 
   return (
@@ -155,7 +175,7 @@ export default function App() {
       <main>
         {renderPage()}
       </main>
-      {!hasCustomLayout && <Footer />}
+      {!hasCustomLayout && <Footer onNavigate={navigate} />}
       <Toaster />
     </div>
   );

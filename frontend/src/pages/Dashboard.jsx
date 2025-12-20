@@ -17,9 +17,11 @@ import {
   Flame,
   UserPlus,
   Bell,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, setLogoutCallback } from '../services/api';
+import { NotificationsDropdown } from '../components/NotificationsDropdown';
 
 export function Dashboard({ onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,6 +37,7 @@ export function Dashboard({ onNavigate }) {
   const userData = authAPI.getCurrentUser() || {};
   const userPlan = localStorage.getItem('selectedPlan') || 'free';
   const userName = userData.name?.split(' ')[0] || userData.username || 'User';
+  const isAdmin = userData.role === 'admin';
 
   useEffect(() => {
     // Set the logout callback for API interceptor
@@ -157,6 +160,18 @@ export function Dashboard({ onNavigate }) {
                 Groups
               </button>
               <button 
+                onClick={() => onNavigate('challenges')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Challenges
+              </button>
+              <button 
+                onClick={() => onNavigate('mentors')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Mentors
+              </button>
+              <button 
                 onClick={() => onNavigate('buddies')}
                 className="text-gray-600 hover:text-gray-900 transition-colors relative"
               >
@@ -173,9 +188,27 @@ export function Dashboard({ onNavigate }) {
               >
                 <MessageCircle className="w-5 h-5" />
               </button>
-              <button className="text-gray-600 hover:text-gray-900 transition-colors">
+              <NotificationsDropdown onNavigate={onNavigate} />
+              <button 
+                onClick={() => onNavigate('reflections')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Reflections
+              </button>
+              <button 
+                onClick={() => onNavigate('settings')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
                 <Settings className="w-5 h-5" />
               </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => onNavigate('admin')}
+                  className="text-red-600 hover:text-red-700 transition-colors"
+                >
+                  <Shield className="w-5 h-5" />
+                </button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleLogout}
@@ -211,6 +244,18 @@ export function Dashboard({ onNavigate }) {
                 Groups
               </button>
               <button 
+                onClick={() => onNavigate('challenges')}
+                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
+              >
+                Challenges
+              </button>
+              <button 
+                onClick={() => onNavigate('mentors')}
+                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
+              >
+                Mentors
+              </button>
+              <button 
                 onClick={() => onNavigate('buddies')}
                 className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2 flex items-center"
               >
@@ -227,9 +272,27 @@ export function Dashboard({ onNavigate }) {
               >
                 Messages
               </button>
-              <button className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2">
+              <button 
+                onClick={() => onNavigate('reflections')}
+                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
+              >
+                Reflections
+              </button>
+              <button 
+                onClick={() => onNavigate('settings')}
+                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
+              >
                 Settings
               </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => onNavigate('admin')}
+                  className="block w-full text-left text-red-600 hover:text-red-700 transition-colors py-2 flex items-center"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin Panel
+                </button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleLogout}

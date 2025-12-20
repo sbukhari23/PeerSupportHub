@@ -15,7 +15,7 @@ export function Header({ currentPage, onNavigate }) {
   // Navigation items for logged-out users
   const publicNavItems = [
     { label: 'Home', page: 'home' },
-    { label: 'How It Works', page: 'howitworks' },
+    { label: 'How It Works', page: 'how-it-works' },
     { label: 'Membership', page: 'membership' },
     { label: 'Community', page: 'community' },
     { label: 'Blogs & Resources', page: 'blogs' },

@@ -1,12 +1,23 @@
 import { Instagram, Linkedin, Youtube } from 'lucide-react';
 
-export function Footer() {
-  const links = ['FAQs', 'Contact', 'Terms', 'Privacy'];
+export function Footer({ onNavigate }) {
+  const links = [
+    { label: 'FAQs', page: 'faqs' },
+    { label: 'Contact', page: 'contact' },
+    { label: 'Terms', page: null },
+    { label: 'Privacy', page: null },
+  ];
   const socialLinks = [
     { icon: Instagram, label: 'Instagram', href: '#' },
     { icon: Linkedin, label: 'LinkedIn', href: '#' },
     { icon: Youtube, label: 'YouTube', href: '#' },
   ];
+
+  const handleClick = (page) => {
+    if (page && onNavigate) {
+      onNavigate(page);
+    }
+  };
 
   return (
     <footer className="bg-white border-t border-gray-200 px-6 py-8">
@@ -14,10 +25,13 @@ export function Footer() {
         {/* Navigation Links */}
         <div className="flex flex-wrap justify-center gap-4 text-gray-600">
           {links.map((link, index) => (
-            <span key={link} className="flex items-center gap-4">
-              <a href="#" className="hover:text-foreground transition-colors">
-                {link}
-              </a>
+            <span key={link.label} className="flex items-center gap-4">
+              <button 
+                onClick={() => handleClick(link.page)}
+                className="hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </button>
               {index < links.length - 1 && (
                 <span className="text-gray-300">|</span>
               )}
