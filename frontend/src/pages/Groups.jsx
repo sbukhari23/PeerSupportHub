@@ -110,11 +110,11 @@ export function Groups({ onNavigate }) {
     return group.members?.some((m) => m._id === userData._id || m === userData._id);
   };
 
+  // Group types must match backend validation: 'Pod', 'FocusedSpace', 'AnonymousVent'
   const groupTypes = [
     { value: 'FocusedSpace', label: 'Focused Space', description: 'Goal-oriented discussions' },
     { value: 'AnonymousVent', label: 'Anonymous Vent', description: 'Share anonymously' },
-    { value: 'StudyGroup', label: 'Study Group', description: 'Academic support' },
-    { value: 'WellnessCircle', label: 'Wellness Circle', description: 'Health & wellness' },
+    { value: 'Pod', label: 'Pod', description: 'Close-knit group (max 5 members)' },
   ];
 
   if (isLoading) {

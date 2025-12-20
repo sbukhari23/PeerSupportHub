@@ -35,6 +35,24 @@ api.interceptors.response.use(
     const isAuthRoute = error.config?.url?.includes('/users/login') || 
                         error.config?.url?.includes('/users/register');
     
+    // Extract error message from various possible response formats
+    // Backend may send: { msg: "..." }, { message: "..." }, { errors: [...] }, or plain text
+    if (error.response?.data) {
+      const data = error.response.data;
+      // Handle validation errors array from express-validator
+      if (data.errors && Array.isArray(data.errors)) {
+        error.response.data.msg = data.errors.map(e => e.msg).join(', ');
+        error.response.data.message = error.response.data.msg;
+      }
+      // Normalize error message field
+      if (data.msg && !data.message) {
+        error.response.data.message = data.msg;
+      }
+      if (data.message && !data.msg) {
+        error.response.data.msg = data.message;
+      }
+    }
+    
     // Don't auto-logout - just reject the promise
     // The token might still be valid, just the endpoint might not exist
     // Only clear token if it's definitely an auth failure on a protected route

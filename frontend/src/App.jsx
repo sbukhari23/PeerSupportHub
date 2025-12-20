@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Toaster } from './components/ui/sonner';
 import { Header } from './pages/Header';
 import { Home } from './pages/Home';
@@ -22,66 +22,116 @@ import { HabitManager } from './pages/HabitManager';
 import { Footer } from './pages/Footer';
 import { authAPI } from './services/api';
 
+// Pages that require authentication
+const protectedPages = ['dashboard', 'groups', 'buddies', 'messages', 'habits', 'onboarding', 'payment'];
+
 export default function App() {
-  // Check if user is already logged in on initial load
+  // Get initial page from URL hash or default based on auth status
   const getInitialPage = () => {
-    // If user is authenticated, take them to dashboard
-    if (authAPI.isAuthenticated()) {
-      return 'dashboard';
+    const hash = window.location.hash.slice(1); // Remove the '#'
+    
+    if (hash) {
+      // Check if it's a protected page and user is not authenticated
+      const basePage = hash.split('-')[0]; // Handle group-chat-{id}, messages-{id}
+      const isProtected = protectedPages.includes(basePage) || 
+                          hash.startsWith('group-chat-') || 
+                          hash.startsWith('messages-');
+      
+      if (isProtected && !authAPI.isAuthenticated()) {
+        return 'login';
+      }
+      return hash;
     }
-    return 'home';
+    
+    // Default: if authenticated go to dashboard, else home
+    return authAPI.isAuthenticated() ? 'dashboard' : 'home';
   };
 
   const [currentPage, setCurrentPage] = useState(getInitialPage);
+
+  // Custom navigation function that also updates the URL
+  const navigate = useCallback((page) => {
+    setCurrentPage(page);
+    window.location.hash = page;
+  }, []);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1) || 'home';
+      
+      // Check if it's a protected page and user is not authenticated
+      const basePage = hash.split('-')[0];
+      const isProtected = protectedPages.includes(basePage) || 
+                          hash.startsWith('group-chat-') || 
+                          hash.startsWith('messages-');
+      
+      if (isProtected && !authAPI.isAuthenticated()) {
+        navigate('login');
+        return;
+      }
+      
+      setCurrentPage(hash);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Set initial hash if not present
+    if (!window.location.hash) {
+      window.location.hash = currentPage;
+    }
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [currentPage, navigate]);
 
   const renderPage = () => {
     // Handle dynamic routes like group-chat-{id} and messages-{id}
     if (currentPage.startsWith('group-chat-')) {
       const groupId = currentPage.replace('group-chat-', '');
-      return <GroupChat groupId={groupId} onNavigate={setCurrentPage} />;
+      return <GroupChat groupId={groupId} onNavigate={navigate} />;
     }
     if (currentPage.startsWith('messages-')) {
       const userId = currentPage.replace('messages-', '');
-      return <Messages userId={userId} onNavigate={setCurrentPage} />;
+      return <Messages userId={userId} onNavigate={navigate} />;
     }
 
     switch (currentPage) {
       case 'home':
-        return <Home onNavigate={setCurrentPage} />;
+        return <Home onNavigate={navigate} />;
       case 'how-it-works':
-        return <HowItWorks onNavigate={setCurrentPage} />;
+        return <HowItWorks onNavigate={navigate} />;
       case 'membership':
-        return <Membership onNavigate={setCurrentPage} />;
+        return <Membership onNavigate={navigate} />;
       case 'community':
-        return <Community onNavigate={setCurrentPage} />;
+        return <Community onNavigate={navigate} />;
       case 'blogs':
-        return <BlogsResources onNavigate={setCurrentPage} />;
+        return <BlogsResources onNavigate={navigate} />;
       case 'faqs':
-        return <FAQs onNavigate={setCurrentPage} />;
+        return <FAQs onNavigate={navigate} />;
       case 'contact':
-        return <Contact onNavigate={setCurrentPage} />;
+        return <Contact onNavigate={navigate} />;
       case 'login':
-        return <Login onNavigate={setCurrentPage} />;
+        return <Login onNavigate={navigate} />;
       case 'signup':
-        return <Signup onNavigate={setCurrentPage} />;
+        return <Signup onNavigate={navigate} />;
       case 'forgot-password':
-        return <ForgotPassword onNavigate={setCurrentPage} />;
+        return <ForgotPassword onNavigate={navigate} />;
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard onNavigate={navigate} />;
       case 'payment':
-        return <Payment onNavigate={setCurrentPage} />;
+        return <Payment onNavigate={navigate} />;
       case 'onboarding':
-        return <Onboarding onNavigate={setCurrentPage} />;
+        return <Onboarding onNavigate={navigate} />;
       case 'groups':
-        return <Groups onNavigate={setCurrentPage} />;
+        return <Groups onNavigate={navigate} />;
       case 'buddies':
-        return <Buddies onNavigate={setCurrentPage} />;
+        return <Buddies onNavigate={navigate} />;
       case 'messages':
-        return <Messages onNavigate={setCurrentPage} />;
+        return <Messages onNavigate={navigate} />;
       case 'habits':
-        return <HabitManager onNavigate={setCurrentPage} />;
+        return <HabitManager onNavigate={navigate} />;
       default:
-        return <Home onNavigate={setCurrentPage} />;
+        return <Home onNavigate={navigate} />;
     }
   };
 
@@ -101,7 +151,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      {!hasCustomLayout && <Header currentPage={currentPage} onNavigate={setCurrentPage} />}
+      {!hasCustomLayout && <Header currentPage={currentPage} onNavigate={navigate} />}
       <main>
         {renderPage()}
       </main>

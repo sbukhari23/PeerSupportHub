@@ -45,15 +45,13 @@ export function HabitManager({ onNavigate }) {
     dailyWindowEnd: '',
   });
 
+  // Categories must match backend validation: 'Wellness', 'Productivity', 'Learning', 'Social', 'Career'
   const categories = [
     'Wellness',
-    'Fitness',
-    'Learning',
     'Productivity',
-    'Mindfulness',
+    'Learning',
     'Social',
-    'Finance',
-    'Creativity',
+    'Career',
   ];
 
   useEffect(() => {
@@ -92,7 +90,25 @@ export function HabitManager({ onNavigate }) {
     }
 
     try {
-      await habitsAPI.createHabit(newHabit);
+      // Only send non-empty values to avoid validation errors
+      const habitData = {
+        name: newHabit.name.trim(),
+        description: newHabit.description.trim(),
+        category: newHabit.category,
+      };
+      
+      // Only include optional fields if they have values
+      if (newHabit.userIntention?.trim()) {
+        habitData.userIntention = newHabit.userIntention.trim();
+      }
+      if (newHabit.dailyWindowStart?.trim()) {
+        habitData.dailyWindowStart = newHabit.dailyWindowStart.trim();
+      }
+      if (newHabit.dailyWindowEnd?.trim()) {
+        habitData.dailyWindowEnd = newHabit.dailyWindowEnd.trim();
+      }
+      
+      await habitsAPI.createHabit(habitData);
       toast.success('Habit created successfully!');
       setShowAddModal(false);
       setNewHabit({

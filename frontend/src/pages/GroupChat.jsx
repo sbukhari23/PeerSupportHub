@@ -26,6 +26,7 @@ export function GroupChat({ groupId, onNavigate }) {
   const [editingMessage, setEditingMessage] = useState(null);
   const [showMembers, setShowMembers] = useState(false);
   const messagesEndRef = useRef(null);
+  const lastMessageCountRef = useRef(0);
 
   const userData = authAPI.getCurrentUser() || {};
 
@@ -37,30 +38,45 @@ export function GroupChat({ groupId, onNavigate }) {
       return;
     }
 
-    fetchGroupAndMessages();
+    fetchGroupAndMessages(true); // Initial load - force scroll
+
+    // Poll for new messages every 3 seconds for real-time updates
+    const pollInterval = setInterval(() => {
+      fetchGroupAndMessages(false); // Polling - only scroll on new messages
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, onNavigate]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchGroupAndMessages = async () => {
+  const fetchGroupAndMessages = async (forceScroll = false) => {
     try {
       const [groupData, messagesData] = await Promise.all([
         groupsAPI.getGroup(groupId),
         messagesAPI.getGroupMessages(groupId),
       ]);
       setGroup(groupData);
-      setMessages(messagesData.messages?.reverse() || []);
+      const newMessages = messagesData.messages?.reverse() || [];
+      
+      // Only scroll if there are new messages or forced
+      const hasNewMessages = newMessages.length !== lastMessageCountRef.current;
+      lastMessageCountRef.current = newMessages.length;
+      
+      setMessages(newMessages);
+      
+      if (forceScroll || hasNewMessages) {
+        setTimeout(scrollToBottom, 100);
+      }
     } catch (error) {
       console.error('Error fetching group data:', error);
-      toast.error('Failed to load group chat');
-      onNavigate('groups');
+      if (isLoading) {
+        toast.error('Failed to load group chat');
+        onNavigate('groups');
+      }
     } finally {
       setIsLoading(false);
     }

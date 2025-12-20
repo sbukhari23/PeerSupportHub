@@ -22,6 +22,7 @@ export function Messages({ userId, onNavigate }) {
   const [otherUser, setOtherUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef(null);
+  const lastMessageCountRef = useRef(0);
 
   const userData = authAPI.getCurrentUser() || {};
 
@@ -35,15 +36,24 @@ export function Messages({ userId, onNavigate }) {
 
     // If userId is provided, open that conversation directly
     if (userId) {
-      loadConversation(userId);
+      loadConversation(userId, true);
     } else {
       fetchConversations();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, onNavigate]);
 
+  // Polling for real-time message updates
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!activeConversation) return;
+
+    const pollInterval = setInterval(() => {
+      loadConversation(activeConversation, false);
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,15 +70,27 @@ export function Messages({ userId, onNavigate }) {
     }
   };
 
-  const loadConversation = async (recipientId) => {
+  const loadConversation = async (recipientId, forceScroll = false) => {
     try {
-      setIsLoading(true);
+      if (forceScroll) setIsLoading(true);
       const data = await messagesAPI.getDirectMessages(recipientId);
-      setMessages(data.messages?.reverse() || []);
+      const newMessages = data.messages?.reverse() || [];
+      
+      // Only scroll if there are new messages or forced
+      const hasNewMessages = newMessages.length !== lastMessageCountRef.current;
+      lastMessageCountRef.current = newMessages.length;
+      
+      setMessages(newMessages);
       setOtherUser(data.otherUser);
       setActiveConversation(recipientId);
+      
+      if (forceScroll || hasNewMessages) {
+        setTimeout(scrollToBottom, 100);
+      }
     } catch (error) {
-      toast.error('Failed to load conversation');
+      if (forceScroll) {
+        toast.error('Failed to load conversation');
+      }
       console.error('Error loading conversation:', error);
     } finally {
       setIsLoading(false);
@@ -82,7 +104,8 @@ export function Messages({ userId, onNavigate }) {
     try {
       await messagesAPI.sendDirectMessage(activeConversation, newMessage.trim());
       setNewMessage('');
-      loadConversation(activeConversation);
+      lastMessageCountRef.current = 0; // Reset to trigger scroll
+      loadConversation(activeConversation, true);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send message');
     }
@@ -94,7 +117,7 @@ export function Messages({ userId, onNavigate }) {
     try {
       await messagesAPI.deleteDirectMessage(messageId);
       toast.success('Message deleted');
-      loadConversation(activeConversation);
+      loadConversation(activeConversation, true);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete message');
     }
