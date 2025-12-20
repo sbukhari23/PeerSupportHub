@@ -51,6 +51,21 @@ app.use('/api/groups', require('./routes/groupRoutes'));
 // Message routes
 app.use('/api/messages', require('./routes/messageRoutes'));
 
+// Notification routes
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+// Challenge routes
+app.use('/api/challenges', require('./routes/challengeRoutes'));
+
+// Routine Pack routes
+app.use('/api/routine-packs', require('./routes/routinePackRoutes'));
+
+// Reflection routes
+app.use('/api/reflections', require('./routes/reflectionRoutes'));
+
+// Feedback Mirror routes
+app.use('/api/feedback', require('./routes/feedbackMirrorRoutes'));
+
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
