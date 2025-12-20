@@ -194,6 +194,28 @@ router.put(
   }
 });
 
+// GET /api/logs/today -- Get all of today's logs for the current user
+router.get('/today', protect, async (req, res) => {
+  try {
+    const today = getStartOfDay();
+    
+    // Get all user's habits
+    const userHabits = await UserHabit.find({ userId: req.user._id });
+    const habitIds = userHabits.map(h => h._id);
+    
+    // Get today's logs for those habits
+    const todayLogs = await DailyLog.find({
+      userHabitId: { $in: habitIds },
+      logDate: today,
+    });
+    
+    res.json(todayLogs);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // GET /api/logs/streak/:habitId -- Calculate current streak for this habit
 router.get(
   '/streak/:habitId',

@@ -5,6 +5,7 @@ const upload = require('../middleware/uploadMiddleware');
 const Message = require('../models/Message');
 const Group = require('../models/Group');
 const User = require('../models/User');
+const { sendGroupMessageNotification, sendMessageNotification } = require('../utils/notificationService');
 
 // Helper function to check group membership
 const checkGroupMembership = async (userId, groupId) => {
@@ -65,6 +66,21 @@ router.post('/:groupId', protect, upload.array('images', 5), async (req, res) =>
         name: 'Anonymous',
         username: 'anonymous',
       };
+    }
+
+    // Send notifications to other group members
+    const io = req.app.get('io');
+    const senderName = shouldBeAnonymous ? 'Anonymous' : req.user.name;
+    const messagePreview = content.length > 50 ? content.substring(0, 50) + '...' : content;
+    
+    // Notify all group members except sender
+    const otherMembers = group.members.filter(memberId => memberId.toString() !== req.user._id.toString());
+    for (const memberId of otherMembers) {
+      try {
+        await sendGroupMessageNotification(io, memberId.toString(), group.name, senderName, messagePreview);
+      } catch (notifError) {
+        console.error('Failed to send notification:', notifError);
+      }
     }
 
     res.status(201).json(responseMessage);
@@ -308,6 +324,15 @@ router.post('/direct/:userId', protect, upload.array('images', 5), async (req, r
     // Populate sender and recipient info
     await message.populate('senderId', 'name username');
     await message.populate('recipientId', 'name username');
+
+    // Send notification to recipient
+    const io = req.app.get('io');
+    const messagePreview = content.length > 50 ? content.substring(0, 50) + '...' : content;
+    try {
+      await sendMessageNotification(io, recipientId, req.user.name, messagePreview);
+    } catch (notifError) {
+      console.error('Failed to send DM notification:', notifError);
+    }
 
     res.status(201).json(message);
   } catch (error) {
