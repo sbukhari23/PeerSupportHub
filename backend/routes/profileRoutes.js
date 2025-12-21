@@ -112,34 +112,80 @@ router.get('/stats', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/profile/:userId
-// @desc    View another user's public profile
+// @route   GET /api/profile/search/users
+// @desc    Search for users to send buddy requests
 // @access  Private
-router.get(
-  '/:userId',
-  protect,
-  ...objectIdValidation('userId'),
-  validate,
-  async (req, res) => {
+router.get('/search/users', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select(
-      'name username onboardingIntent'
-    ); // Only return public info (name, username, bio)
+    const { q, limit = 20 } = req.query;
+    const currentUserId = req.user._id;
 
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+    // Get current user's buddies and pending requests
+    const currentUser = await User.findById(currentUserId).select('buddies');
+    const buddyIds = currentUser.buddies || [];
+
+    // Get pending requests sent by current user
+    const sentRequests = await BuddyRequest.find({
+      sender: currentUserId,
+      status: 'Pending',
+    }).select('recipient');
+    const pendingRecipientIds = sentRequests.map(r => r.recipient.toString());
+
+    // Get pending requests received by current user
+    const receivedRequests = await BuddyRequest.find({
+      recipient: currentUserId,
+      status: 'Pending',
+    }).select('sender');
+    const pendingSenderIds = receivedRequests.map(r => r.sender.toString());
+
+    // Build search query
+    let searchQuery = {
+      _id: { $ne: currentUserId }, // Exclude self
+    };
+
+    // If search term provided, filter by name or username
+    if (q && q.trim()) {
+      const searchRegex = new RegExp(q.trim(), 'i');
+      searchQuery.$or = [
+        { name: searchRegex },
+        { username: searchRegex },
+      ];
     }
 
-    res.json(user);
+    const users = await User.find(searchQuery)
+      .select('name username currentProgressScore onboardingIntent')
+      .limit(parseInt(limit))
+      .sort({ name: 1 });
+
+    // Add status to each user
+    const usersWithStatus = users.map(user => {
+      const userId = user._id.toString();
+      let buddyStatus = 'none';
+      
+      if (buddyIds.some(id => id.toString() === userId)) {
+        buddyStatus = 'buddy';
+      } else if (pendingRecipientIds.includes(userId)) {
+        buddyStatus = 'pending_sent';
+      } else if (pendingSenderIds.includes(userId)) {
+        buddyStatus = 'pending_received';
+      }
+
+      return {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        currentProgressScore: user.currentProgressScore,
+        onboardingIntent: user.onboardingIntent,
+        buddyStatus,
+      };
+    });
+
+    res.json(usersWithStatus);
   } catch (err) {
     console.error(err.message);
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ msg: 'User not found' });
-    }
     res.status(500).send('Server Error');
   }
 });
-
 
 // @route   GET /api/profile/buddy/requests
 // @desc    Get all pending buddy requests
@@ -172,6 +218,35 @@ router.get('/buddies', protect, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// @route   GET /api/profile/:userId
+// @desc    View another user's public profile
+// @access  Private
+router.get(
+  '/:userId',
+  protect,
+  ...objectIdValidation('userId'),
+  validate,
+  async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select(
+      'name username onboardingIntent'
+    ); // Only return public info (name, username, bio)
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+});
+
 
 // @route   GET /api/profile/buddy/:userId
 // @desc    View specific buddy's public profile (validates buddy relationship)

@@ -9,7 +9,8 @@
     "server": "nodemon server.js",
     "test": "jest --runInBand --verbose",
     "test:watch": "jest --watchAll --verbose",
-    "test:once": "jest --runInBand --verbose"
+    "test:once": "jest --runInBand --verbose",
+    "seed:admins": "node utils/seedAdmins.js"
   },
   "jest": {
     "testEnvironment": "node",
