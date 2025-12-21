@@ -84,29 +84,42 @@ export function HabitManager({ onNavigate }) {
 
   const handleCreateHabit = async (e) => {
     e.preventDefault();
-    if (!newHabit.name.trim() || !newHabit.description.trim()) {
-      toast.error('Please fill in name and description');
+    
+    // Validate required fields
+    if (!newHabit.name.trim()) {
+      toast.error('Please enter a habit name');
+      return;
+    }
+    
+    if (!newHabit.description.trim()) {
+      toast.error('Please enter a description');
+      return;
+    }
+    
+    if (!newHabit.userIntention?.trim()) {
+      toast.error('Please enter your personal goal/intention');
+      return;
+    }
+    
+    if (!newHabit.dailyWindowStart?.trim()) {
+      toast.error('Please select a daily window start time');
+      return;
+    }
+    
+    if (!newHabit.dailyWindowEnd?.trim()) {
+      toast.error('Please select a daily window end time');
       return;
     }
 
     try {
-      // Only send non-empty values to avoid validation errors
       const habitData = {
         name: newHabit.name.trim(),
         description: newHabit.description.trim(),
         category: newHabit.category,
+        userIntention: newHabit.userIntention.trim(),
+        dailyWindowStart: newHabit.dailyWindowStart.trim(),
+        dailyWindowEnd: newHabit.dailyWindowEnd.trim(),
       };
-      
-      // Only include optional fields if they have values
-      if (newHabit.userIntention?.trim()) {
-        habitData.userIntention = newHabit.userIntention.trim();
-      }
-      if (newHabit.dailyWindowStart?.trim()) {
-        habitData.dailyWindowStart = newHabit.dailyWindowStart.trim();
-      }
-      if (newHabit.dailyWindowEnd?.trim()) {
-        habitData.dailyWindowEnd = newHabit.dailyWindowEnd.trim();
-      }
       
       await habitsAPI.createHabit(habitData);
       toast.success('Habit created successfully!');
@@ -401,7 +414,7 @@ export function HabitManager({ onNavigate }) {
               </div>
 
               <div>
-                <Label htmlFor="intention">Personal Goal (optional)</Label>
+                <Label htmlFor="intention">Personal Goal *</Label>
                 <Input
                   id="intention"
                   value={newHabit.userIntention}
