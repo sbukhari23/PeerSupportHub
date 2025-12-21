@@ -75,8 +75,7 @@ blogPostSchema.index({ title: 'text', content: 'text', tags: 'text' });
 // Index for published posts
 blogPostSchema.index({ status: 1, publishedAt: -1 });
 
-// Index for slug lookup
-blogPostSchema.index({ slug: 1 });
+// Note: slug index is automatically created by unique: true in schema definition
 
 // Virtual for like count
 blogPostSchema.virtual('likeCount').get(function () {
