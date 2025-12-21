@@ -168,6 +168,32 @@ const sendStreakMilestoneNotification = async (io, userId, habitName, streakDays
 };
 
 /**
+ * Send mentor application approved notification
+ */
+const sendMentorApprovedNotification = async (io, userId) => {
+  return await createNotification(io, userId, {
+    type: 'mentor_application_approved',
+    title: '🎉 Mentor Application Approved!',
+    message: 'Congratulations! Your mentor application has been approved. You can now receive mentee requests.',
+    link: '/mentors',
+    icon: '🎉',
+  });
+};
+
+/**
+ * Send mentor application rejected notification
+ */
+const sendMentorRejectedNotification = async (io, userId, reason = '') => {
+  return await createNotification(io, userId, {
+    type: 'mentor_application_rejected',
+    title: '❌ Mentor Application Update',
+    message: reason ? `Your mentor application was not approved. Reason: ${reason}` : 'Your mentor application was not approved at this time. You may reapply in the future.',
+    link: '/mentors',
+    icon: '❌',
+  });
+};
+
+/**
  * Send system notification
  */
 const sendSystemNotification = async (io, userId, title, message, link = null) => {
@@ -192,5 +218,7 @@ module.exports = {
   sendChallengeInviteNotification,
   sendChallengeCompleteNotification,
   sendStreakMilestoneNotification,
+  sendMentorApprovedNotification,
+  sendMentorRejectedNotification,
   sendSystemNotification,
 };

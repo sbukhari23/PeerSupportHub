@@ -6,15 +6,18 @@ const MentorSession = require('../models/MentorSession');
 const { protect } = require('../middleware/authMiddleware');
 
 // @route   GET /api/mentors
-// @desc    Get all available mentors
-// @access  Public
-router.get('/', async (req, res) => {
+// @desc    Get all available mentors (only approved ones)
+// @access  Private (require login to see mentors)
+router.get('/', protect, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const filter = {};
+    const filter = {
+      approvalStatus: 'approved', // Only show approved mentors
+      userId: { $ne: req.user._id }, // Exclude current user
+    };
 
     // Filter by expertise area
     if (req.query.expertise) {
@@ -72,13 +75,14 @@ router.get('/:id', async (req, res) => {
 });
 
 // @route   POST /api/mentors/profile
-// @desc    Create or update mentor profile
-// @access  Private (Mentor)
+// @desc    Create or update mentor profile (application goes to pending)
+// @access  Private
 router.post('/profile', protect, async (req, res) => {
   try {
     const {
       expertise,
       bio,
+      meetingLink,
       oneOnOneLink,
       monthlyQASchedule,
     } = req.body;
@@ -90,30 +94,39 @@ router.post('/profile', protect, async (req, res) => {
       // Update existing profile
       if (expertise) mentorProfile.expertise = expertise;
       if (bio) mentorProfile.bio = bio;
+      if (meetingLink !== undefined) mentorProfile.meetingLink = meetingLink;
       if (oneOnOneLink) mentorProfile.oneOnOneLink = oneOnOneLink;
       if (monthlyQASchedule) mentorProfile.monthlyQASchedule = monthlyQASchedule;
+      
+      // If profile was rejected, resubmit as pending
+      if (mentorProfile.approvalStatus === 'rejected') {
+        mentorProfile.approvalStatus = 'pending';
+        mentorProfile.rejectionReason = null;
+      }
 
       await mentorProfile.save();
 
       res.json({
-        msg: 'Mentor profile updated successfully',
+        msg: mentorProfile.approvalStatus === 'pending' 
+          ? 'Mentor application submitted! Awaiting admin approval.' 
+          : 'Mentor profile updated successfully',
         profile: mentorProfile,
       });
     } else {
-      // Create new profile
+      // Create new profile with pending status
       mentorProfile = await MentorProfile.create({
         userId: req.user._id,
         expertise: expertise || [],
         bio: bio || 'Experienced mentor',
+        meetingLink: meetingLink || '',
         oneOnOneLink,
         monthlyQASchedule,
+        approvalStatus: 'pending', // Always starts as pending
+        isVerified: false,
       });
 
-      // Update user type to Mentor
-      await User.findByIdAndUpdate(req.user._id, { userType: 'Mentor' });
-
       res.status(201).json({
-        msg: 'Mentor profile created successfully',
+        msg: 'Mentor application submitted! Awaiting admin approval.',
         profile: mentorProfile,
       });
     }
@@ -154,13 +167,14 @@ router.post('/:mentorId/book', protect, async (req, res) => {
       return res.status(400).json({ msg: 'Please provide session date and topic' });
     }
 
-    // Validate mentor exists
+    // Validate mentor exists and is approved
     const mentorProfile = await MentorProfile.findOne({
       userId: req.params.mentorId,
+      approvalStatus: 'approved',
     });
 
     if (!mentorProfile) {
-      return res.status(404).json({ msg: 'Mentor not found' });
+      return res.status(404).json({ msg: 'Mentor not found or not approved' });
     }
 
     // Prevent booking with yourself
@@ -173,7 +187,7 @@ router.post('/:mentorId/book', protect, async (req, res) => {
       return res.status(400).json({ msg: 'Session date must be in the future' });
     }
 
-    // Create session
+    // Create session with meeting link from mentor profile
     const session = await MentorSession.create({
       mentorId: req.params.mentorId,
       menteeId: req.user._id,
@@ -182,6 +196,7 @@ router.post('/:mentorId/book', protect, async (req, res) => {
       topic,
       notes,
       status: 'scheduled',
+      meetingLink: mentorProfile.meetingLink || '', // Copy meeting link from mentor profile
     });
 
     await session.populate('mentorId', 'name username email');

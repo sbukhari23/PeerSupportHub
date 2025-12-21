@@ -4,8 +4,10 @@ const User = require('../models/User');
 const Group = require('../models/Group');
 const Message = require('../models/Message');
 const FeedbackMirror = require('../models/FeedbackMirror');
+const MentorProfile = require('../models/MentorProfile');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
+const { sendMentorApprovedNotification, sendMentorRejectedNotification } = require('../utils/notificationService');
 
 // All routes require authentication + admin privileges
 router.use(protect, adminOnly);
@@ -351,6 +353,148 @@ router.delete('/messages/:id', async (req, res) => {
     await message.deleteOne();
 
     res.json({ msg: 'Message deleted successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// ==========================================
+// MENTOR APPLICATION MANAGEMENT
+// ==========================================
+
+// @route   GET /api/admin/mentor-applications
+// @desc    Get all pending mentor applications
+// @access  Admin only
+router.get('/mentor-applications', async (req, res) => {
+  try {
+    const status = req.query.status || 'pending';
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (status !== 'all') {
+      filter.approvalStatus = status;
+    }
+
+    const applications = await MentorProfile.find(filter)
+      .populate('userId', 'name email username avatarUrl createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await MentorProfile.countDocuments(filter);
+    const pendingCount = await MentorProfile.countDocuments({ approvalStatus: 'pending' });
+
+    res.json({
+      applications,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      total,
+      pendingCount,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/admin/mentor-applications/:id/approve
+// @desc    Approve a mentor application
+// @access  Admin only
+router.put('/mentor-applications/:id/approve', async (req, res) => {
+  try {
+    const mentorProfile = await MentorProfile.findById(req.params.id);
+
+    if (!mentorProfile) {
+      return res.status(404).json({ msg: 'Mentor application not found' });
+    }
+
+    if (mentorProfile.approvalStatus === 'approved') {
+      return res.status(400).json({ msg: 'Application already approved' });
+    }
+
+    // Approve the mentor
+    mentorProfile.approvalStatus = 'approved';
+    mentorProfile.isVerified = true;
+    mentorProfile.rejectionReason = null;
+    await mentorProfile.save();
+
+    // Update user type to Mentor
+    await User.findByIdAndUpdate(mentorProfile.userId, { userType: 'Mentor' });
+
+    // Send notification to the mentor (pass null for io since we don't have socket access here)
+    await sendMentorApprovedNotification(null, mentorProfile.userId);
+
+    res.json({
+      msg: 'Mentor application approved successfully',
+      profile: mentorProfile,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/admin/mentor-applications/:id/reject
+// @desc    Reject a mentor application
+// @access  Admin only
+router.put('/mentor-applications/:id/reject', async (req, res) => {
+  try {
+    const { reason } = req.body || {};
+
+    const mentorProfile = await MentorProfile.findById(req.params.id);
+
+    if (!mentorProfile) {
+      return res.status(404).json({ msg: 'Mentor application not found' });
+    }
+
+    if (mentorProfile.approvalStatus === 'rejected') {
+      return res.status(400).json({ msg: 'Application already rejected' });
+    }
+
+    // Reject the mentor
+    mentorProfile.approvalStatus = 'rejected';
+    mentorProfile.rejectionReason = reason || 'Your application did not meet our current requirements.';
+    mentorProfile.isVerified = false;
+    await mentorProfile.save();
+
+    // If user was a mentor, revert to regular user
+    const user = await User.findById(mentorProfile.userId);
+    if (user && user.userType === 'Mentor') {
+      user.userType = 'Regular';
+      await user.save();
+    }
+
+    // Send notification to the user (pass null for io since we don't have socket access here)
+    await sendMentorRejectedNotification(null, mentorProfile.userId, mentorProfile.rejectionReason);
+
+    res.json({
+      msg: 'Mentor application rejected',
+      profile: mentorProfile,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   GET /api/admin/mentor-applications/:id
+// @desc    Get a specific mentor application
+// @access  Admin only
+router.get('/mentor-applications/:id', async (req, res) => {
+  try {
+    const application = await MentorProfile.findById(req.params.id)
+      .populate('userId', 'name email username avatarUrl bio createdAt')
+      .lean();
+
+    if (!application) {
+      return res.status(404).json({ msg: 'Application not found' });
+    }
+
+    res.json(application);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: 'Server Error' });

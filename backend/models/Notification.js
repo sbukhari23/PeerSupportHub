@@ -18,6 +18,8 @@ const notificationSchema = mongoose.Schema(
         'group_invite',
         'group_message',
         'mentor_session',
+        'mentor_application_approved',
+        'mentor_application_rejected',
         'challenge_invite',
         'challenge_complete',
         'streak_milestone',

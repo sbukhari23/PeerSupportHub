@@ -13,7 +13,7 @@ router.get('/', protect, async (req, res) => {
   try {
     // Find all UserHabits for this user and populate the template details
     const habits = await UserHabit.find({ userId: req.user._id })
-      .populate('templateId', 'name description category');
+      .populate('templateId', 'name description category isPublic');
     
     res.json(habits);
   } catch (err) {
@@ -204,6 +204,60 @@ router.get('/public', protect, async (req, res) => {
   }
 });
 
-module.exports = router;
+// @route   POST /api/habits/from-template/:templateId
+// @desc    Add a public habit template to user's habits
+// @access  Private
+router.post(
+  '/from-template/:templateId',
+  protect,
+  ...objectIdValidation('templateId'),
+  validate,
+  async (req, res) => {
+    const { templateId } = req.params;
+    const { userIntention, dailyWindowStart, dailyWindowEnd } = req.body;
 
-// muneeb is getting error in pulling this file
+    try {
+      // 1. Find the public template
+      const template = await HabitTemplate.findById(templateId);
+      if (!template) {
+        return res.status(404).json({ msg: 'Template not found' });
+      }
+
+      if (!template.isPublic) {
+        return res.status(400).json({ msg: 'Template is not public' });
+      }
+
+      // 2. Check if user already has this habit
+      const existingHabit = await UserHabit.findOne({
+        userId: req.user._id,
+        templateId: template._id,
+      });
+
+      if (existingHabit) {
+        return res.status(400).json({ msg: 'You already have this habit' });
+      }
+
+      // 3. Create a new UserHabit linked to this template
+      const newUserHabit = new UserHabit({
+        userId: req.user._id,
+        templateId: template._id,
+        userIntention: userIntention || '',
+        dailyWindowStart: dailyWindowStart || '00:00',
+        dailyWindowEnd: dailyWindowEnd || '23:59',
+      });
+
+      const savedUserHabit = await newUserHabit.save();
+
+      // Populate and return
+      const populatedHabit = await UserHabit.findById(savedUserHabit._id)
+        .populate('templateId', 'name description category isPublic');
+
+      res.status(201).json(populatedHabit);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  }
+);
+
+module.exports = router;

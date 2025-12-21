@@ -216,6 +216,65 @@ router.get('/today', protect, async (req, res) => {
   }
 });
 
+// GET /api/logs/weekly -- Get logs for the current week (Mon-Sun) for the current user
+router.get('/weekly', protect, async (req, res) => {
+  try {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Calculate start of week (Monday)
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const startOfWeek = getStartOfDay(new Date(today.getTime() - daysFromMonday * 24 * 60 * 60 * 1000));
+    
+    // Get all user's habits
+    const userHabits = await UserHabit.find({ userId: req.user._id });
+    const habitIds = userHabits.map(h => h._id);
+    const totalHabits = habitIds.length;
+    
+    // Get logs for this week
+    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const weekLogs = await DailyLog.find({
+      userHabitId: { $in: habitIds },
+      logDate: { $gte: startOfWeek, $lt: endOfWeek },
+    });
+    
+    // Build daily progress for each day of the week
+    const weeklyProgress = [];
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    for (let i = 0; i < 7; i++) {
+      const dayDate = getStartOfDay(new Date(startOfWeek.getTime() + i * 24 * 60 * 60 * 1000));
+      const dayLogs = weekLogs.filter(log => {
+        const logDate = getStartOfDay(log.logDate);
+        return logDate.getTime() === dayDate.getTime();
+      });
+      
+      const completedCount = dayLogs.filter(log => log.completionStatus === 'Completed').length;
+      const pausedCount = dayLogs.filter(log => log.completionStatus === 'Paused').length;
+      
+      const todayStart = getStartOfDay();
+      const isToday = dayDate.getTime() === todayStart.getTime();
+      const isFuture = dayDate.getTime() > todayStart.getTime();
+      
+      weeklyProgress.push({
+        day: dayNames[i],
+        date: dayDate.toISOString(),
+        completed: completedCount,
+        paused: pausedCount,
+        total: totalHabits,
+        percentage: totalHabits > 0 ? Math.round(((completedCount + pausedCount) / totalHabits) * 100) : 0,
+        isToday,
+        isFuture,
+      });
+    }
+    
+    res.json(weeklyProgress);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // GET /api/logs/streak/:habitId -- Calculate current streak for this habit
 router.get(
   '/streak/:habitId',
