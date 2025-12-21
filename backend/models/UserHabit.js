@@ -15,7 +15,7 @@ const userHabitSchema = mongoose.Schema(
     },
     userIntention: {
       type: String,
-      required: true,
+      default: '',
     },
     dailyWindowStart: {
       type: String, 
