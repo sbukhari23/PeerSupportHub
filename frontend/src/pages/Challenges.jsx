@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   Trophy,
@@ -28,6 +29,7 @@ export function Challenges({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('discover'); // 'discover', 'my-challenges', 'leaderboard'
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [showLogModal, setShowLogModal] = useState(false);
+  const [leaveChallengeId, setLeaveChallengeId] = useState(null);
   const [logValue, setLogValue] = useState(1);
 
   // User data available if needed for future features
@@ -92,11 +94,15 @@ export function Challenges({ onNavigate }) {
   };
 
   const handleLeaveChallenge = async (challengeId) => {
-    if (!confirm('Are you sure you want to leave this challenge?')) return;
-    
+    setLeaveChallengeId(challengeId);
+  };
+
+  const confirmLeaveChallenge = async () => {
+    if (!leaveChallengeId) return;
     try {
-      await challengesAPI.leaveChallenge(challengeId);
+      await challengesAPI.leaveChallenge(leaveChallengeId);
       toast.success('Left the challenge');
+      setLeaveChallengeId(null);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to leave challenge');
@@ -449,6 +455,17 @@ export function Challenges({ onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Leave Challenge Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!leaveChallengeId}
+        onOpenChange={(open) => !open && setLeaveChallengeId(null)}
+        title="Leave Challenge"
+        description="Are you sure you want to leave this challenge? Your progress will be saved but you'll no longer be part of the leaderboard."
+        confirmText="Leave"
+        variant="warning"
+        onConfirm={confirmLeaveChallenge}
+      />
     </div>
   );
 }

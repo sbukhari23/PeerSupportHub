@@ -811,6 +811,64 @@ export const adminAPI = {
     const response = await api.put(`/admin/mentor-applications/${applicationId}/reject`, { reason });
     return response.data;
   },
+
+  // Get reports (placeholder - returns empty array if route doesn't exist)
+  getReports: async () => {
+    try {
+      const response = await api.get('/admin/reports');
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
+
+  // Ban user
+  banUser: async (userId) => {
+    const response = await api.put(`/admin/users/${userId}/ban`);
+    return response.data;
+  },
+
+  // Unban user
+  unbanUser: async (userId) => {
+    const response = await api.put(`/admin/users/${userId}/unban`);
+    return response.data;
+  },
+
+  // Delete content
+  deleteContent: async (contentId, contentType) => {
+    const response = await api.delete(`/admin/${contentType}/${contentId}`);
+    return response.data;
+  },
+
+  // Resolve report
+  resolveReport: async (reportId) => {
+    const response = await api.put(`/admin/reports/${reportId}/resolve`);
+    return response.data;
+  },
+
+  // Get habit templates (with optional filter)
+  getHabitTemplates: async (params = {}) => {
+    const response = await api.get('/admin/habit-templates', { params });
+    return response.data;
+  },
+
+  // Approve habit template (make public)
+  approveHabitTemplate: async (templateId) => {
+    const response = await api.put(`/admin/habit-templates/${templateId}/approve`);
+    return response.data;
+  },
+
+  // Revoke habit template public status
+  revokeHabitTemplate: async (templateId) => {
+    const response = await api.put(`/admin/habit-templates/${templateId}/revoke`);
+    return response.data;
+  },
+
+  // Delete habit template
+  deleteHabitTemplate: async (templateId) => {
+    const response = await api.delete(`/admin/habit-templates/${templateId}`);
+    return response.data;
+  },
 };
 
 // Feedback Mirror API

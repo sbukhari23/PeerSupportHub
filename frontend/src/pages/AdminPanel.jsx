@@ -6,7 +6,7 @@ import { Textarea } from '../components/ui/textarea';
 import { 
   ArrowLeft, Users, FileText, Shield, BarChart3, Loader2, 
   Search, Ban, CheckCircle, Trash2, Eye, AlertTriangle, RefreshCw,
-  TrendingUp, Activity, Calendar, MessageSquare, Award, X, Clock
+  TrendingUp, Activity, Calendar, MessageSquare, Award, X, Clock, Target
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { adminAPI, authAPI, setLogoutCallback } from '../services/api';
@@ -26,6 +26,8 @@ export function AdminPanel({ onNavigate }) {
   const [pendingMentorCount, setPendingMentorCount] = useState(0);
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [habitTemplates, setHabitTemplates] = useState([]);
+  const [pendingTemplatesCount, setPendingTemplatesCount] = useState(0);
 
   // Set logout callback
   useEffect(() => {
@@ -52,20 +54,27 @@ export function AdminPanel({ onNavigate }) {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const [statsRes, usersRes, reportsRes, flaggedRes, mentorAppsRes] = await Promise.all([
-        adminAPI.getStats().catch(() => ({ data: null })),
-        adminAPI.getUsers().catch(() => ({ data: [] })),
-        adminAPI.getReports().catch(() => ({ data: [] })),
-        adminAPI.getFlaggedContent().catch(() => ({ data: [] })),
-        adminAPI.getMentorApplications({ status: 'pending' }).catch(() => ({ applications: [], pendingCount: 0 }))
+      const [statsRes, usersRes, reportsRes, flaggedRes, mentorAppsRes, templatesRes] = await Promise.all([
+        adminAPI.getStats().catch(() => null),
+        adminAPI.getUsers().catch(() => ({ users: [] })),
+        adminAPI.getReports().catch(() => []),
+        adminAPI.getFlaggedContent().catch(() => []),
+        adminAPI.getMentorApplications({ status: 'pending' }).catch(() => ({ applications: [], pendingCount: 0 })),
+        adminAPI.getHabitTemplates().catch(() => [])
       ]);
       
-      setStats(statsRes.data || statsRes || defaultStats);
-      setUsers(usersRes.data || usersRes || []);
-      setReports(reportsRes.data || reportsRes || []);
-      setFlaggedContent(flaggedRes.data || flaggedRes || []);
-      setMentorApplications(mentorAppsRes.applications || []);
-      setPendingMentorCount(mentorAppsRes.pendingCount || 0);
+      setStats(statsRes || defaultStats);
+      // usersRes returns { users: [], total, currentPage, totalPages }
+      const usersArray = Array.isArray(usersRes) ? usersRes : (usersRes?.users || []);
+      setUsers(usersArray);
+      setReports(Array.isArray(reportsRes) ? reportsRes : []);
+      setFlaggedContent(Array.isArray(flaggedRes) ? flaggedRes : (flaggedRes?.data || []));
+      setMentorApplications(mentorAppsRes?.applications || []);
+      setPendingMentorCount(mentorAppsRes?.pendingCount || 0);
+      
+      const templates = Array.isArray(templatesRes) ? templatesRes : [];
+      setHabitTemplates(templates);
+      setPendingTemplatesCount(templates.filter(t => !t.isPublic).length);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
@@ -161,16 +170,51 @@ export function AdminPanel({ onNavigate }) {
     }
   };
 
+  const handleApproveTemplate = async (templateId) => {
+    try {
+      await adminAPI.approveHabitTemplate(templateId);
+      toast.success('Template approved and made public!');
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error approving template:', error);
+      toast.error('Failed to approve template');
+    }
+  };
+
+  const handleRevokeTemplate = async (templateId) => {
+    try {
+      await adminAPI.revokeHabitTemplate(templateId);
+      toast.success('Template public status revoked');
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error revoking template:', error);
+      toast.error('Failed to revoke template');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId) => {
+    if (!window.confirm('Are you sure you want to delete this template?')) return;
+    try {
+      await adminAPI.deleteHabitTemplate(templateId);
+      toast.success('Template deleted successfully');
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error('Failed to delete template');
+    }
+  };
+
   // Filter users based on search
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = Array.isArray(users) ? users.filter(user =>
     user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) : [];
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'mentors', label: `Mentor Applications${pendingMentorCount > 0 ? ` (${pendingMentorCount})` : ''}`, icon: Award },
+    { id: 'templates', label: `Habit Templates${pendingTemplatesCount > 0 ? ` (${pendingTemplatesCount})` : ''}`, icon: Target },
     { id: 'reports', label: 'Reports', icon: AlertTriangle },
     { id: 'content', label: 'Flagged Content', icon: Shield },
   ];
@@ -530,6 +574,130 @@ export function AdminPanel({ onNavigate }) {
                   </div>
                 </Card>
               ))
+            )}
+          </div>
+        )}
+
+        {/* Habit Templates Tab */}
+        {activeTab === 'templates' && (
+          <div className="space-y-4">
+            {habitTemplates.length === 0 ? (
+              <Card className="p-8 text-center border-2 border-gray-200 rounded-2xl">
+                <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No habit templates found</p>
+              </Card>
+            ) : (
+              <>
+                {/* Pending Templates */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold mb-3">Pending Approval ({habitTemplates.filter(t => !t.isPublic).length})</h3>
+                  {habitTemplates.filter(t => !t.isPublic).length === 0 ? (
+                    <Card className="p-4 border-2 border-gray-200 rounded-xl text-center">
+                      <p className="text-gray-500 text-sm">No pending templates</p>
+                    </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {habitTemplates.filter(t => !t.isPublic).map((template) => (
+                        <Card key={template._id} className="p-4 border-2 border-yellow-200 bg-yellow-50 rounded-xl">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-bold">{template.name}</p>
+                                <span className="px-2 py-0.5 bg-yellow-200 text-yellow-800 rounded-full text-xs">
+                                  Pending
+                                </span>
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                  {template.category}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 text-sm mb-2">{template.description}</p>
+                              <p className="text-xs text-gray-500">
+                                Created by: {template.creatorId?.name || 'Unknown'} ({template.creatorId?.email || 'N/A'})
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {new Date(template.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Button
+                                onClick={() => handleApproveTemplate(template._id)}
+                                size="sm"
+                                className="rounded-full bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => handleDeleteTemplate(template._id)}
+                                size="sm"
+                                className="rounded-full text-red-600 border-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Public Templates */}
+                <div>
+                  <h3 className="text-lg font-bold mb-3">Public Templates ({habitTemplates.filter(t => t.isPublic).length})</h3>
+                  {habitTemplates.filter(t => t.isPublic).length === 0 ? (
+                    <Card className="p-4 border-2 border-gray-200 rounded-xl text-center">
+                      <p className="text-gray-500 text-sm">No public templates</p>
+                    </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {habitTemplates.filter(t => t.isPublic).map((template) => (
+                        <Card key={template._id} className="p-4 border-2 border-green-200 bg-green-50 rounded-xl">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-bold">{template.name}</p>
+                                <span className="px-2 py-0.5 bg-green-200 text-green-800 rounded-full text-xs">
+                                  Public
+                                </span>
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                  {template.category}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 text-sm mb-2">{template.description}</p>
+                              <p className="text-xs text-gray-500">
+                                Created by: {template.creatorId?.name || 'Unknown'} ({template.creatorId?.email || 'N/A'})
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => handleRevokeTemplate(template._id)}
+                                size="sm"
+                                className="rounded-full text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                              >
+                                <Ban className="w-4 h-4 mr-1" />
+                                Revoke
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => handleDeleteTemplate(template._id)}
+                                size="sm"
+                                className="rounded-full text-red-600 border-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}

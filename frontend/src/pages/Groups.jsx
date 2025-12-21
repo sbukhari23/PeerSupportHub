@@ -4,6 +4,7 @@ import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   Users,
   Plus,
@@ -30,6 +31,7 @@ export function Groups({ onNavigate }) {
     type: 'FocusedSpace',
     topicFocus: '',
   });
+  const [leaveGroupId, setLeaveGroupId] = useState(null);
 
   const userData = authAPI.getCurrentUser() || {};
 
@@ -89,11 +91,15 @@ export function Groups({ onNavigate }) {
   };
 
   const handleLeaveGroup = async (groupId) => {
-    if (!confirm('Are you sure you want to leave this group?')) return;
-    
+    setLeaveGroupId(groupId);
+  };
+
+  const confirmLeaveGroup = async () => {
+    if (!leaveGroupId) return;
     try {
-      await groupsAPI.leaveGroup(groupId);
+      await groupsAPI.leaveGroup(leaveGroupId);
       toast.success('Successfully left the group');
+      setLeaveGroupId(null);
       fetchGroups();
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to leave group');
@@ -337,6 +343,17 @@ export function Groups({ onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Leave Group Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!leaveGroupId}
+        onOpenChange={(open) => !open && setLeaveGroupId(null)}
+        title="Leave Group"
+        description="Are you sure you want to leave this group? You can rejoin later if you change your mind."
+        confirmText="Leave"
+        variant="warning"
+        onConfirm={confirmLeaveGroup}
+      />
     </div>
   );
 }

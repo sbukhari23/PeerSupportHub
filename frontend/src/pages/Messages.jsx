@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   Send,
@@ -21,6 +22,7 @@ export function Messages({ userId, onNavigate }) {
   const [isLoading, setIsLoading] = useState(true);
   const [otherUser, setOtherUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteMessageId, setDeleteMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const lastMessageCountRef = useRef(0);
 
@@ -112,11 +114,15 @@ export function Messages({ userId, onNavigate }) {
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Delete this message?')) return;
-    
+    setDeleteMessageId(messageId);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!deleteMessageId) return;
     try {
-      await messagesAPI.deleteDirectMessage(messageId);
+      await messagesAPI.deleteDirectMessage(deleteMessageId);
       toast.success('Message deleted');
+      setDeleteMessageId(null);
       loadConversation(activeConversation, true);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete message');
@@ -336,6 +342,17 @@ export function Messages({ userId, onNavigate }) {
           </div>
         </>
       )}
+
+      {/* Delete Message Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteMessageId}
+        onOpenChange={(open) => !open && setDeleteMessageId(null)}
+        title="Delete Message"
+        description="Are you sure you want to delete this message? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={confirmDeleteMessage}
+      />
     </div>
   );
 }

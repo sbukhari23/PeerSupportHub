@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   Send,
@@ -33,6 +34,7 @@ export function GroupChat({ groupId, onNavigate }) {
   const [panelWidth, setPanelWidth] = useState(280);
   const [isResizing, setIsResizing] = useState(false);
   const [showMobilePanel, setShowMobilePanel] = useState(!groupId);
+  const [deleteMessageId, setDeleteMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const lastMessageCountRef = useRef(0);
   const panelRef = useRef(null);
@@ -174,11 +176,15 @@ export function GroupChat({ groupId, onNavigate }) {
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Delete this message?')) return;
-    
+    setDeleteMessageId(messageId);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!deleteMessageId) return;
     try {
-      await messagesAPI.deleteMessage(messageId);
+      await messagesAPI.deleteMessage(deleteMessageId);
       toast.success('Message deleted');
+      setDeleteMessageId(null);
       fetchGroupAndMessages();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete message');
@@ -689,6 +695,17 @@ export function GroupChat({ groupId, onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Delete Message Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteMessageId}
+        onOpenChange={(open) => !open && setDeleteMessageId(null)}
+        title="Delete Message"
+        description="Are you sure you want to delete this message? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={confirmDeleteMessage}
+      />
     </div>
   );
 }

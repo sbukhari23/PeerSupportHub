@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   BookOpen,
@@ -31,6 +32,7 @@ export function Reflections({ onNavigate }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingReflection, setEditingReflection] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [deleteReflectionId, setDeleteReflectionId] = useState(null);
   
   const [newReflection, setNewReflection] = useState({
     type: 'Daily',
@@ -130,11 +132,15 @@ export function Reflections({ onNavigate }) {
   };
 
   const handleDeleteReflection = async (reflectionId) => {
-    if (!confirm('Are you sure you want to delete this reflection?')) return;
+    setDeleteReflectionId(reflectionId);
+  };
 
+  const confirmDeleteReflection = async () => {
+    if (!deleteReflectionId) return;
     try {
-      await reflectionsAPI.deleteReflection(reflectionId);
+      await reflectionsAPI.deleteReflection(deleteReflectionId);
       toast.success('Reflection deleted');
+      setDeleteReflectionId(null);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to delete reflection');
@@ -451,6 +457,17 @@ export function Reflections({ onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Delete Reflection Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteReflectionId}
+        onOpenChange={(open) => !open && setDeleteReflectionId(null)}
+        title="Delete Reflection"
+        description="Are you sure you want to delete this reflection? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={confirmDeleteReflection}
+      />
     </div>
   );
 }

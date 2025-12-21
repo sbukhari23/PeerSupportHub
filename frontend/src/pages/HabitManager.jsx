@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Progress } from '../components/ui/progress';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   Plus,
@@ -35,6 +36,7 @@ export function HabitManager({ onNavigate }) {
   const [editingHabit, setEditingHabit] = useState(null);
   const [showLogModal, setShowLogModal] = useState(null);
   const [logNote, setLogNote] = useState('');
+  const [deleteHabitId, setDeleteHabitId] = useState(null);
   
   const [newHabit, setNewHabit] = useState({
     name: '',
@@ -160,11 +162,15 @@ export function HabitManager({ onNavigate }) {
   };
 
   const handleDeleteHabit = async (habitId) => {
-    if (!confirm('Are you sure you want to delete this habit? This cannot be undone.')) return;
+    setDeleteHabitId(habitId);
+  };
 
+  const confirmDeleteHabit = async () => {
+    if (!deleteHabitId) return;
     try {
-      await habitsAPI.deleteHabit(habitId);
+      await habitsAPI.deleteHabit(deleteHabitId);
       toast.success('Habit deleted');
+      setDeleteHabitId(null);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to delete habit');
@@ -201,7 +207,9 @@ export function HabitManager({ onNavigate }) {
       setShowTemplatesModal(false);
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.msg || 'Failed to add habit');
+      console.error('Error adding template:', error);
+      const errorMsg = error.response?.data?.msg || error.response?.data?.message || error.message || 'Failed to add habit';
+      toast.error(errorMsg);
     }
   };
 
@@ -761,6 +769,17 @@ export function HabitManager({ onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteHabitId}
+        onOpenChange={(open) => !open && setDeleteHabitId(null)}
+        title="Delete Habit"
+        description="Are you sure you want to delete this habit? This action cannot be undone and all your progress data will be lost."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={confirmDeleteHabit}
+      />
     </div>
   );
 }

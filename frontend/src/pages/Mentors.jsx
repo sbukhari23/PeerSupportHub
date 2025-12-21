@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   Users,
@@ -34,6 +35,7 @@ export function Mentors({ onNavigate }) {
   const [showRatingModal, setShowRatingModal] = useState(null);
   const [rating, setRating] = useState(5);
   const [feedback, setFeedback] = useState('');
+  const [cancelSessionId, setCancelSessionId] = useState(null);
   
   const [bookingData, setBookingData] = useState({
     sessionDate: '',
@@ -127,11 +129,15 @@ export function Mentors({ onNavigate }) {
   };
 
   const handleCancelSession = async (sessionId) => {
-    if (!confirm('Are you sure you want to cancel this session?')) return;
+    setCancelSessionId(sessionId);
+  };
 
+  const confirmCancelSession = async () => {
+    if (!cancelSessionId) return;
     try {
-      await mentorsAPI.cancelSession(sessionId);
+      await mentorsAPI.cancelSession(cancelSessionId);
       toast.success('Session cancelled');
+      setCancelSessionId(null);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to cancel session');
@@ -720,6 +726,17 @@ export function Mentors({ onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Cancel Session Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!cancelSessionId}
+        onOpenChange={(open) => !open && setCancelSessionId(null)}
+        title="Cancel Session"
+        description="Are you sure you want to cancel this mentoring session? The mentor will be notified of the cancellation."
+        confirmText="Cancel Session"
+        variant="warning"
+        onConfirm={confirmCancelSession}
+      />
     </div>
   );
 }

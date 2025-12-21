@@ -4,6 +4,7 @@ import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   User,
@@ -27,6 +28,7 @@ export function Settings({ onNavigate }) {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'notifications', 'preferences'
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -116,11 +118,13 @@ export function Settings({ onNavigate }) {
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to log out?')) {
-      authAPI.logout();
-      sessionStorage.clear();
-      onNavigate('home');
-    }
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = () => {
+    authAPI.logout();
+    sessionStorage.clear();
+    onNavigate('home');
   };
 
   const genderOptions = ['Male', 'Female', 'Non-Binary', 'Prefer not to say'];
@@ -423,6 +427,17 @@ export function Settings({ onNavigate }) {
           </div>
         </Card>
       </main>
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Confirm Logout"
+        description="Are you sure you want to log out of your account? You will need to sign in again to access your dashboard."
+        confirmText="Logout"
+        variant="logout"
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { 
   CheckCircle2, 
   Circle, 
@@ -42,6 +43,9 @@ export function Dashboard({ onNavigate }) {
   // Habit log modal state
   const [showLogModal, setShowLogModal] = useState(null);
   const [logNote, setLogNote] = useState('');
+  
+  // Logout dialog state
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   
   // Get user data from localStorage (persists across page reloads and tabs)
   const userData = authAPI.getCurrentUser() || {};
@@ -166,11 +170,13 @@ export function Dashboard({ onNavigate }) {
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to log out?')) {
-      authAPI.logout();
-      sessionStorage.clear();
-      onNavigate('home');
-    }
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = () => {
+    authAPI.logout();
+    sessionStorage.clear();
+    onNavigate('home');
   };
 
   const completedToday = todayHabits.filter(h => checkedHabits.includes(h.id)).length;
@@ -760,6 +766,17 @@ export function Dashboard({ onNavigate }) {
           </Card>
         </div>
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Confirm Logout"
+        description="Are you sure you want to log out of your account? You will need to sign in again to access your dashboard."
+        confirmText="Logout"
+        variant="logout"
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }
