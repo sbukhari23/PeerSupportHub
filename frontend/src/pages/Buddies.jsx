@@ -12,6 +12,8 @@ import {
   X,
   Bell,
   TrendingUp,
+  Clock,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, profileAPI, setLogoutCallback } from '../services/api';
@@ -19,9 +21,12 @@ import { authAPI, profileAPI, setLogoutCallback } from '../services/api';
 export function Buddies({ onNavigate }) {
   const [buddies, setBuddies] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('buddies'); // 'buddies' or 'requests'
+  const [findSearchTerm, setFindSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('buddies'); // 'buddies', 'requests', or 'find'
 
   useEffect(() => {
     setLogoutCallback(onNavigate);
@@ -33,6 +38,46 @@ export function Buddies({ onNavigate }) {
 
     fetchBuddyData();
   }, [onNavigate]);
+
+  // Search for users when activeTab is 'find' and search term changes
+  useEffect(() => {
+    if (activeTab === 'find') {
+      const searchUsers = async () => {
+        setIsSearching(true);
+        try {
+          const results = await profileAPI.searchUsers(findSearchTerm, 20);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Error searching users:', error);
+          toast.error('Failed to search users');
+        } finally {
+          setIsSearching(false);
+        }
+      };
+
+      // Debounce search
+      const timeoutId = setTimeout(searchUsers, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [findSearchTerm, activeTab]);
+
+  // Initial load when switching to Find tab
+  useEffect(() => {
+    if (activeTab === 'find' && searchResults.length === 0) {
+      const loadInitialUsers = async () => {
+        setIsSearching(true);
+        try {
+          const results = await profileAPI.searchUsers('', 20);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Error loading users:', error);
+        } finally {
+          setIsSearching(false);
+        }
+      };
+      loadInitialUsers();
+    }
+  }, [activeTab]);
 
   const fetchBuddyData = async () => {
     try {
@@ -55,6 +100,11 @@ export function Buddies({ onNavigate }) {
       await profileAPI.acceptBuddyRequest(requestId);
       toast.success('Buddy request accepted!');
       fetchBuddyData();
+      // Refresh search results if on find tab
+      if (activeTab === 'find') {
+        const results = await profileAPI.searchUsers(findSearchTerm, 20);
+        setSearchResults(results);
+      }
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to accept request');
     }
@@ -67,6 +117,21 @@ export function Buddies({ onNavigate }) {
       fetchBuddyData();
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to reject request');
+    }
+  };
+
+  const handleSendRequest = async (userId) => {
+    try {
+      await profileAPI.sendBuddyRequest(userId);
+      toast.success('Buddy request sent!');
+      // Update the search results to reflect pending status
+      setSearchResults(prev => 
+        prev.map(user => 
+          user._id === userId ? { ...user, buddyStatus: 'pending_sent' } : user
+        )
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.msg || 'Failed to send request');
     }
   };
 
@@ -116,7 +181,7 @@ export function Buddies({ onNavigate }) {
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         {/* Tabs */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 flex-wrap">
           <button
             onClick={() => setActiveTab('buddies')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
@@ -142,8 +207,20 @@ export function Buddies({ onNavigate }) {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('find')}
+            className={`px-6 py-2 rounded-full font-medium transition-colors ${
+              activeTab === 'find'
+                ? 'bg-blue-600 text-white'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+            }`}
+          >
+            <UserPlus className="w-4 h-4 inline mr-2" />
+            Find Buddies
+          </button>
         </div>
 
+        {/* My Buddies Tab */}
         {activeTab === 'buddies' && (
           <>
             {/* Search */}
@@ -151,7 +228,7 @@ export function Buddies({ onNavigate }) {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search buddies..."
+                placeholder="Search your buddies..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 py-3 rounded-full border-2 border-gray-300"
@@ -201,11 +278,11 @@ export function Buddies({ onNavigate }) {
                   <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-600 mb-2">No buddies yet</h3>
                   <p className="text-gray-500 mb-4">
-                    Connect with other users in groups to send buddy requests
+                    Find and connect with other users to become accountability buddies
                   </p>
-                  <Button onClick={() => onNavigate('groups')} className="rounded-full">
+                  <Button onClick={() => setActiveTab('find')} className="rounded-full bg-blue-600 hover:bg-blue-700">
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Find People in Groups
+                    Find Buddies
                   </Button>
                 </div>
               )}
@@ -213,6 +290,7 @@ export function Buddies({ onNavigate }) {
           </>
         )}
 
+        {/* Pending Requests Tab */}
         {activeTab === 'requests' && (
           <div className="space-y-4">
             {pendingRequests.length > 0 ? (
@@ -259,6 +337,123 @@ export function Buddies({ onNavigate }) {
               </div>
             )}
           </div>
+        )}
+
+        {/* Find Buddies Tab */}
+        {activeTab === 'find' && (
+          <>
+            {/* Search */}
+            <div className="relative mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search users by name or username..."
+                value={findSearchTerm}
+                onChange={(e) => setFindSearchTerm(e.target.value)}
+                className="pl-12 py-3 rounded-full border-2 border-blue-300"
+              />
+              {isSearching && (
+                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 animate-spin" />
+              )}
+            </div>
+
+            {/* Search Results */}
+            <div className="space-y-4">
+              {searchResults.length > 0 ? (
+                searchResults.map((user) => (
+                  <Card
+                    key={user._id}
+                    className={`border-2 rounded-2xl p-4 transition-colors ${
+                      user.buddyStatus === 'buddy' 
+                        ? 'border-green-200 bg-green-50/50'
+                        : user.buddyStatus === 'pending_sent'
+                        ? 'border-yellow-200 bg-yellow-50/50'
+                        : user.buddyStatus === 'pending_received'
+                        ? 'border-blue-200 bg-blue-50/50'
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
+                        user.buddyStatus === 'buddy'
+                          ? 'bg-gradient-to-br from-green-200 to-green-300 text-green-700'
+                          : 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600'
+                      }`}>
+                        {user.name?.charAt(0) || '?'}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{user.name}</h3>
+                        <p className="text-gray-500 text-sm">@{user.username}</p>
+                        {user.onboardingIntent && (
+                          <p className="text-gray-600 text-sm mt-1">{user.onboardingIntent}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {user.currentProgressScore !== undefined && user.currentProgressScore > 0 && (
+                          <div className="flex items-center gap-1 text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="text-sm font-medium">{user.currentProgressScore}</span>
+                          </div>
+                        )}
+                        
+                        {/* Action button based on status */}
+                        {user.buddyStatus === 'buddy' && (
+                          <Button
+                            onClick={() => onNavigate(`messages-${user._id}`)}
+                            variant="outline"
+                            className="rounded-full border-2 border-green-500 text-green-600"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Message
+                          </Button>
+                        )}
+                        
+                        {user.buddyStatus === 'pending_sent' && (
+                          <div className="flex items-center gap-2 text-yellow-600 bg-yellow-100 px-4 py-2 rounded-full">
+                            <Clock className="w-4 h-4" />
+                            <span className="text-sm font-medium">Pending</span>
+                          </div>
+                        )}
+                        
+                        {user.buddyStatus === 'pending_received' && (
+                          <Button
+                            onClick={() => setActiveTab('requests')}
+                            className="rounded-full bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Bell className="w-4 h-4 mr-2" />
+                            View Request
+                          </Button>
+                        )}
+                        
+                        {user.buddyStatus === 'none' && (
+                          <Button
+                            onClick={() => handleSendRequest(user._id)}
+                            className="rounded-full bg-blue-600 hover:bg-blue-700"
+                          >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Send Request
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : isSearching ? (
+                <div className="text-center py-12">
+                  <Loader2 className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+                  <p className="text-gray-600">Searching users...</p>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-gray-600 mb-2">No users found</h3>
+                  <p className="text-gray-500">
+                    Try searching with a different name or username
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </main>
     </div>

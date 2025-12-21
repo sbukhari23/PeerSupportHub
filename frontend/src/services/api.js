@@ -242,6 +242,14 @@ export const profileAPI = {
     return response.data;
   },
 
+  // Search users to send buddy requests
+  searchUsers: async (query = '', limit = 20) => {
+    const response = await api.get('/profile/search/users', {
+      params: { q: query, limit },
+    });
+    return response.data;
+  },
+
   // Get all current user's buddies
   getBuddies: async () => {
     const response = await api.get('/profile/buddies');

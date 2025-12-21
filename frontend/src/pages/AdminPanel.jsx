@@ -39,8 +39,8 @@ export function AdminPanel({ onNavigate }) {
       return;
     }
     // Check if user is admin (this should be verified by backend)
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.role !== 'admin') {
+    const user = authAPI.getCurrentUser() || {};
+    if (user.userType !== 'Admin') {
       toast.error('Access denied. Admin privileges required.');
       onNavigate('dashboard');
       return;
@@ -358,11 +358,11 @@ export function AdminPanel({ onNavigate }) {
                           <p className="text-gray-500 text-sm">{user.email}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`px-2 py-0.5 rounded-full text-xs ${
-                              user.role === 'admin' ? 'bg-red-100 text-red-700' :
-                              user.role === 'mentor' ? 'bg-blue-100 text-blue-700' :
+                              user.userType === 'Admin' ? 'bg-red-100 text-red-700' :
+                              user.userType === 'Mentor' ? 'bg-blue-100 text-blue-700' :
                               'bg-gray-100 text-gray-700'
                             }`}>
-                              {user.role || 'user'}
+                              {user.userType || 'User'}
                             </span>
                             {user.isBanned && (
                               <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">

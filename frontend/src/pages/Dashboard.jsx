@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
 import { 
   CheckCircle2, 
   Circle, 
@@ -18,6 +20,7 @@ import {
   UserPlus,
   Bell,
   Shield,
+  Pause,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, mentorsAPI, setLogoutCallback } from '../services/api';
@@ -36,11 +39,15 @@ export function Dashboard({ onNavigate }) {
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Habit log modal state
+  const [showLogModal, setShowLogModal] = useState(null);
+  const [logNote, setLogNote] = useState('');
+  
   // Get user data from localStorage (persists across page reloads and tabs)
   const userData = authAPI.getCurrentUser() || {};
   const userPlan = localStorage.getItem('selectedPlan') || 'free';
   const userName = userData.name?.split(' ')[0] || userData.username || 'User';
-  const isAdmin = userData.role === 'admin';
+  const isAdmin = userData.userType === 'Admin';
 
   useEffect(() => {
     // Set the logout callback for API interceptor
@@ -123,14 +130,36 @@ export function Dashboard({ onNavigate }) {
       return; // Already logged today
     }
     
+    // Find the habit to show in modal
+    const habit = habits.find(h => h._id === habitId);
+    if (habit) {
+      setShowLogModal(habit);
+    }
+  };
+
+  // Actually log the habit with a status
+  const handleLogHabit = async (habitId, status) => {
     try {
-      await habitLogsAPI.createLog(habitId, { completionStatus: 'Completed' });
-      setCheckedHabits(prev => [...prev, habitId]);
-      toast.success('Great job! Keep it up! 🎯');
+      await habitLogsAPI.createLog(habitId, { 
+        completionStatus: status,
+        reflectionNote: logNote,
+      });
+      
+      if (status === 'Completed') {
+        setCheckedHabits(prev => [...prev, habitId]);
+        toast.success('🎉 Great job! Keep it up!');
+      } else if (status === 'Paused') {
+        setPausedHabits(prev => [...prev, habitId]);
+        toast.success('Rest day recorded');
+      }
       
       // Refresh stats
       const newStats = await profileAPI.getStats().catch(() => null);
       if (newStats) setStats(newStats);
+      
+      // Close modal and reset
+      setShowLogModal(null);
+      setLogNote('');
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to log habit');
     }
@@ -681,6 +710,56 @@ export function Dashboard({ onNavigate }) {
           </div>
         </div>
       </main>
+
+      {/* Log Habit Modal */}
+      {showLogModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md rounded-2xl p-6 bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Log: {showLogModal.templateId?.name || showLogModal.name}</h2>
+              <button onClick={() => { setShowLogModal(null); setLogNote(''); }} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="reflection">Reflection Note (optional)</Label>
+                <Textarea
+                  id="reflection"
+                  value={logNote}
+                  onChange={(e) => setLogNote(e.target.value)}
+                  placeholder="How did it go? Any thoughts?"
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 mb-2">How did you do today?</p>
+                <Button
+                  onClick={() => handleLogHabit(showLogModal._id, 'Completed')}
+                  className="w-full rounded-full bg-green-600 hover:bg-green-700 py-3"
+                >
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                  Completed
+                </Button>
+                <Button
+                  onClick={() => handleLogHabit(showLogModal._id, 'Paused')}
+                  variant="outline"
+                  className="w-full rounded-full border-2 border-purple-300 text-purple-600 hover:bg-purple-50 py-3"
+                >
+                  <Pause className="w-5 h-5 mr-2" />
+                  Rest Day (keeps streak)
+                </Button>
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Habits are automatically marked as missed if not completed within the time window
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
