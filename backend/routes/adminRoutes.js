@@ -5,6 +5,7 @@ const Group = require('../models/Group');
 const Message = require('../models/Message');
 const FeedbackMirror = require('../models/FeedbackMirror');
 const MentorProfile = require('../models/MentorProfile');
+const HabitTemplate = require('../models/HabitTemplate');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
 const { sendMentorApprovedNotification, sendMentorRejectedNotification } = require('../utils/notificationService');
@@ -158,6 +159,77 @@ router.put('/users/:id', async (req, res) => {
         userType: user.userType,
         isEmailVerified: user.isEmailVerified,
       },
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/admin/users/:id/ban
+// @desc    Ban a user
+// @access  Admin only
+router.put('/users/:id/ban', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Prevent self-ban
+    if (req.user._id.toString() === user._id.toString()) {
+      return res.status(400).json({ msg: 'Cannot ban yourself' });
+    }
+
+    // Prevent banning other admins
+    if (user.userType === 'Admin') {
+      return res.status(400).json({ msg: 'Cannot ban another admin' });
+    }
+
+    user.isBanned = true;
+    user.bannedAt = new Date();
+    await user.save();
+
+    res.json({ 
+      msg: 'User banned successfully',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isBanned: user.isBanned,
+        bannedAt: user.bannedAt
+      }
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/admin/users/:id/unban
+// @desc    Unban a user
+// @access  Admin only
+router.put('/users/:id/unban', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    user.isBanned = false;
+    user.bannedAt = undefined;
+    await user.save();
+
+    res.json({ 
+      msg: 'User unbanned successfully',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isBanned: user.isBanned
+      }
     });
   } catch (err) {
     console.error(err.message);
@@ -495,6 +567,116 @@ router.get('/mentor-applications/:id', async (req, res) => {
     }
 
     res.json(application);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// ==================== HABIT TEMPLATE MANAGEMENT ====================
+
+// @route   GET /api/admin/habit-templates
+// @desc    Get all habit templates with filters
+// @access  Admin only
+router.get('/habit-templates', async (req, res) => {
+  try {
+    const filter = {};
+    
+    // Filter by public status
+    if (req.query.isPublic !== undefined) {
+      filter.isPublic = req.query.isPublic === 'true';
+    }
+    
+    const templates = await HabitTemplate.find(filter)
+      .populate('creatorId', 'name email username')
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    res.json(templates);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/admin/habit-templates/:id/approve
+// @desc    Approve a habit template (make it public)
+// @access  Admin only
+router.put('/habit-templates/:id/approve', async (req, res) => {
+  try {
+    const template = await HabitTemplate.findById(req.params.id);
+    
+    if (!template) {
+      return res.status(404).json({ msg: 'Template not found' });
+    }
+    
+    if (template.isPublic) {
+      return res.status(400).json({ msg: 'Template is already public' });
+    }
+    
+    template.isPublic = true;
+    await template.save();
+    
+    const populatedTemplate = await HabitTemplate.findById(template._id)
+      .populate('creatorId', 'name email username')
+      .lean();
+    
+    res.json({
+      msg: 'Template approved and made public',
+      template: populatedTemplate
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   PUT /api/admin/habit-templates/:id/revoke
+// @desc    Revoke a habit template's public status
+// @access  Admin only
+router.put('/habit-templates/:id/revoke', async (req, res) => {
+  try {
+    const template = await HabitTemplate.findById(req.params.id);
+    
+    if (!template) {
+      return res.status(404).json({ msg: 'Template not found' });
+    }
+    
+    if (!template.isPublic) {
+      return res.status(400).json({ msg: 'Template is not public' });
+    }
+    
+    template.isPublic = false;
+    await template.save();
+    
+    const populatedTemplate = await HabitTemplate.findById(template._id)
+      .populate('creatorId', 'name email username')
+      .lean();
+    
+    res.json({
+      msg: 'Template public status revoked',
+      template: populatedTemplate
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
+// @route   DELETE /api/admin/habit-templates/:id
+// @desc    Delete a habit template
+// @access  Admin only
+router.delete('/habit-templates/:id', async (req, res) => {
+  try {
+    const template = await HabitTemplate.findById(req.params.id);
+    
+    if (!template) {
+      return res.status(404).json({ msg: 'Template not found' });
+    }
+    
+    await HabitTemplate.findByIdAndDelete(req.params.id);
+    
+    res.json({ msg: 'Template deleted successfully' });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: 'Server Error' });

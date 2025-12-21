@@ -59,6 +59,13 @@ const userSchema = mongoose.Schema(
       enum: ['User', 'Mentor', 'Admin'],
       default: 'User',
     },
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },
+    bannedAt: {
+      type: Date,
+    },
     onboardingIntent: {
       type: String,
       required: false,
