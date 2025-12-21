@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 import { 
   ArrowLeft, Users, FileText, Shield, BarChart3, Loader2, 
   Search, Ban, CheckCircle, Trash2, Eye, AlertTriangle, RefreshCw,
-  TrendingUp, Activity, Calendar, MessageSquare
+  TrendingUp, Activity, Calendar, MessageSquare, Award, X, Clock
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { adminAPI, authAPI, setLogoutCallback } from '../services/api';
@@ -21,6 +22,10 @@ export function AdminPanel({ onNavigate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [mentorApplications, setMentorApplications] = useState([]);
+  const [pendingMentorCount, setPendingMentorCount] = useState(0);
+  const [showRejectModal, setShowRejectModal] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Set logout callback
   useEffect(() => {
@@ -47,17 +52,20 @@ export function AdminPanel({ onNavigate }) {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const [statsRes, usersRes, reportsRes, flaggedRes] = await Promise.all([
+      const [statsRes, usersRes, reportsRes, flaggedRes, mentorAppsRes] = await Promise.all([
         adminAPI.getStats().catch(() => ({ data: null })),
         adminAPI.getUsers().catch(() => ({ data: [] })),
         adminAPI.getReports().catch(() => ({ data: [] })),
-        adminAPI.getFlaggedContent().catch(() => ({ data: [] }))
+        adminAPI.getFlaggedContent().catch(() => ({ data: [] })),
+        adminAPI.getMentorApplications({ status: 'pending' }).catch(() => ({ applications: [], pendingCount: 0 }))
       ]);
       
       setStats(statsRes.data || statsRes || defaultStats);
       setUsers(usersRes.data || usersRes || []);
       setReports(reportsRes.data || reportsRes || []);
       setFlaggedContent(flaggedRes.data || flaggedRes || []);
+      setMentorApplications(mentorAppsRes.applications || []);
+      setPendingMentorCount(mentorAppsRes.pendingCount || 0);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
@@ -127,6 +135,32 @@ export function AdminPanel({ onNavigate }) {
     setShowUserModal(true);
   };
 
+  const handleApproveMentor = async (applicationId) => {
+    try {
+      await adminAPI.approveMentorApplication(applicationId);
+      toast.success('Mentor application approved!');
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error approving mentor:', error);
+      toast.error('Failed to approve mentor application');
+    }
+  };
+
+  const handleRejectMentor = async () => {
+    if (!showRejectModal) return;
+    
+    try {
+      await adminAPI.rejectMentorApplication(showRejectModal, rejectionReason);
+      toast.success('Mentor application rejected');
+      setShowRejectModal(null);
+      setRejectionReason('');
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error rejecting mentor:', error);
+      toast.error('Failed to reject mentor application');
+    }
+  };
+
   // Filter users based on search
   const filteredUsers = users.filter(user =>
     user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -136,6 +170,7 @@ export function AdminPanel({ onNavigate }) {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'mentors', label: `Mentor Applications${pendingMentorCount > 0 ? ` (${pendingMentorCount})` : ''}`, icon: Award },
     { id: 'reports', label: 'Reports', icon: AlertTriangle },
     { id: 'content', label: 'Flagged Content', icon: Shield },
   ];
@@ -414,6 +449,91 @@ export function AdminPanel({ onNavigate }) {
           </div>
         )}
 
+        {/* Mentor Applications Tab */}
+        {activeTab === 'mentors' && (
+          <div className="space-y-4">
+            {mentorApplications.length === 0 ? (
+              <Card className="p-8 text-center border-2 border-gray-200 rounded-2xl">
+                <Award className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                <p className="text-gray-500">No pending mentor applications</p>
+              </Card>
+            ) : (
+              mentorApplications.map((application) => (
+                <Card key={application._id} className="p-6 border-2 border-gray-200 rounded-2xl">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {application.userId?.name?.charAt(0) || 'M'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-bold text-lg">{application.userId?.name}</p>
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${
+                            application.approvalStatus === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : application.approvalStatus === 'approved'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {application.approvalStatus}
+                          </span>
+                        </div>
+                        <p className="text-gray-500 text-sm mb-2">{application.userId?.email}</p>
+                        
+                        <div className="mb-3">
+                          <p className="text-sm font-medium text-gray-700 mb-1">Bio:</p>
+                          <p className="text-gray-600 text-sm line-clamp-3">{application.bio}</p>
+                        </div>
+                        
+                        {application.expertise?.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-sm font-medium text-gray-700 mb-1">Expertise:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {application.expertise.map((exp, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-xs">
+                                  {exp}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {application.meetingLink && (
+                          <p className="text-sm text-gray-500">
+                            <span className="font-medium">Meeting Link:</span> {application.meetingLink}
+                          </p>
+                        )}
+                        
+                        <p className="text-xs text-gray-400 mt-2">
+                          Applied: {new Date(application.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        onClick={() => handleApproveMentor(application._id)}
+                        className="rounded-full bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowRejectModal(application._id)}
+                        className="rounded-full text-red-600 border-red-600 hover:bg-red-50"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
+
         {/* Flagged Content Tab */}
         {activeTab === 'content' && (
           <div className="space-y-4">
@@ -528,6 +648,44 @@ export function AdminPanel({ onNavigate }) {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Mentor Rejection Modal */}
+      <Dialog open={!!showRejectModal} onOpenChange={(open) => !open && setShowRejectModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Reject Mentor Application</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Please provide a reason for rejecting this application. This will be shared with the applicant.
+            </p>
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Reason for rejection (optional)"
+              className="min-h-[100px]"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRejectModal(null);
+                  setRejectionReason('');
+                }}
+                className="flex-1 rounded-full"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRejectMentor}
+                className="flex-1 rounded-full bg-red-600 hover:bg-red-700"
+              >
+                Reject Application
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -20,17 +20,20 @@ import {
   Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, setLogoutCallback } from '../services/api';
+import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, mentorsAPI, setLogoutCallback } from '../services/api';
 import { NotificationsDropdown } from '../components/NotificationsDropdown';
 
 export function Dashboard({ onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [checkedHabits, setCheckedHabits] = useState([]);
+  const [pausedHabits, setPausedHabits] = useState([]);
   const [habits, setHabits] = useState([]);
   const [groups, setGroups] = useState([]);
   const [stats, setStats] = useState(null);
   const [buddies, setBuddies] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [weeklyData, setWeeklyData] = useState([]);
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Get user data from localStorage (persists across page reloads and tabs)
@@ -61,13 +64,15 @@ export function Dashboard({ onNavigate }) {
     // Fetch data from API
     const fetchData = async () => {
       try {
-        const [habitsData, groupsData, statsData, buddiesData, requestsData, todayLogsData] = await Promise.all([
+        const [habitsData, groupsData, statsData, buddiesData, requestsData, todayLogsData, weeklyLogsData, sessionsData] = await Promise.all([
           habitsAPI.getHabits().catch(() => []),
           groupsAPI.getMyGroups().catch(() => []),
           profileAPI.getStats().catch(() => null),
           profileAPI.getBuddies().catch(() => []),
           profileAPI.getBuddyRequests().catch(() => []),
           habitLogsAPI.getTodayLogs().catch(() => []),
+          habitLogsAPI.getWeeklyLogs().catch(() => []),
+          mentorsAPI.getUpcomingSessions().catch(() => ({ asMentee: [] })),
         ]);
         setHabits(habitsData);
         setGroups(groupsData);
@@ -75,11 +80,23 @@ export function Dashboard({ onNavigate }) {
         setBuddies(buddiesData);
         setPendingRequests(requestsData);
         
-        // Populate checkedHabits with habits that were already logged today
+        // Populate checkedHabits with habits that were logged as Completed today
         const completedHabitIds = todayLogsData
           .filter(log => log.completionStatus === 'Completed')
           .map(log => log.userHabitId);
         setCheckedHabits(completedHabitIds);
+        
+        // Populate pausedHabits with habits that were logged as Paused (rest day) today
+        const pausedHabitIds = todayLogsData
+          .filter(log => log.completionStatus === 'Paused')
+          .map(log => log.userHabitId);
+        setPausedHabits(pausedHabitIds);
+        
+        // Process weekly data for the week view
+        setWeeklyData(weeklyLogsData);
+        
+        // Set upcoming mentor sessions
+        setUpcomingSessions(sessionsData.asMentee || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -102,7 +119,7 @@ export function Dashboard({ onNavigate }) {
   const currentStreak = stats?.longestStreak || 0;
 
   const handleHabitToggle = async (habitId) => {
-    if (checkedHabits.includes(habitId)) {
+    if (checkedHabits.includes(habitId) || pausedHabits.includes(habitId)) {
       return; // Already logged today
     }
     
@@ -128,8 +145,10 @@ export function Dashboard({ onNavigate }) {
   };
 
   const completedToday = todayHabits.filter(h => checkedHabits.includes(h.id)).length;
+  const pausedToday = todayHabits.filter(h => pausedHabits.includes(h.id)).length;
   const totalHabits = todayHabits.length;
-  const progressPercent = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+  const loggedToday = completedToday + pausedToday;
+  const progressPercent = totalHabits > 0 ? Math.round((loggedToday / totalHabits) * 100) : 0;
 
   if (isLoading) {
     return (
@@ -323,9 +342,9 @@ export function Dashboard({ onNavigate }) {
                 Welcome back, {userName}! 👋
               </h1>
               <p className="text-gray-600 text-lg">
-                {completedToday === totalHabits 
+                {loggedToday === totalHabits 
                   ? "Amazing! You've completed all your habits today!" 
-                  : `You have ${totalHabits - completedToday} habit${totalHabits - completedToday !== 1 ? 's' : ''} left today`}
+                  : `You have ${totalHabits - loggedToday} habit${totalHabits - loggedToday !== 1 ? 's' : ''} left today`}
               </p>
             </div>
 
@@ -346,8 +365,8 @@ export function Dashboard({ onNavigate }) {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">Today's Habits</h2>
                 <div className="text-right">
-                  <div className="text-2xl font-bold">{completedToday}/{totalHabits}</div>
-                  <div className="text-sm text-gray-600">completed</div>
+                  <div className="text-2xl font-bold">{loggedToday}/{totalHabits}</div>
+                  <div className="text-sm text-gray-600">logged</div>
                 </div>
               </div>
 
@@ -359,26 +378,39 @@ export function Dashboard({ onNavigate }) {
               <div className="space-y-3">
                 {todayHabits.length > 0 ? todayHabits.map((habit) => {
                   const isCompleted = checkedHabits.includes(habit.id);
+                  const isPaused = pausedHabits.includes(habit.id);
+                  const isLogged = isCompleted || isPaused;
                   return (
                     <button
                       key={habit.id}
                       onClick={() => handleHabitToggle(habit.id)}
-                      disabled={isCompleted}
+                      disabled={isLogged}
                       className={`
                         w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left
                         ${isCompleted 
                           ? 'border-green-500 bg-green-50 cursor-default' 
+                          : isPaused
+                          ? 'border-purple-400 bg-purple-50 cursor-default'
                           : 'border-gray-300 hover:border-gray-400 bg-white cursor-pointer'
                         }
                       `}
                     >
                       {isCompleted ? (
                         <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                      ) : isPaused ? (
+                        <Circle className="w-6 h-6 text-purple-500 flex-shrink-0" />
                       ) : (
                         <Circle className="w-6 h-6 text-gray-400 flex-shrink-0" />
                       )}
-                      <span className={`flex-1 text-lg ${isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                      <span className={`flex-1 text-lg ${
+                        isCompleted 
+                          ? 'line-through text-gray-500' 
+                          : isPaused 
+                          ? 'line-through text-purple-600 decoration-purple-400' 
+                          : 'text-gray-900'
+                      }`}>
                         {habit.name}
+                        {isPaused && <span className="ml-2 text-xs text-purple-500">(Rest Day)</span>}
                       </span>
                       {habit.streak > 0 && (
                         <span className="flex items-center gap-1 text-orange-500 text-sm">
@@ -409,15 +441,41 @@ export function Dashboard({ onNavigate }) {
               <h2 className="text-2xl font-bold mb-6">This Week</h2>
               
               <div className="grid grid-cols-7 gap-2 mb-6">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
-                  const isCompleted = index < 5; // Mock data
+                {(weeklyData.length > 0 ? weeklyData : [
+                  { day: 'Mon', percentage: 0, isToday: false, isFuture: false },
+                  { day: 'Tue', percentage: 0, isToday: false, isFuture: false },
+                  { day: 'Wed', percentage: 0, isToday: false, isFuture: false },
+                  { day: 'Thu', percentage: 0, isToday: false, isFuture: false },
+                  { day: 'Fri', percentage: 0, isToday: false, isFuture: false },
+                  { day: 'Sat', percentage: 0, isToday: false, isFuture: false },
+                  { day: 'Sun', percentage: 0, isToday: false, isFuture: false },
+                ]).map((dayData, index) => {
+                  // Determine color based on percentage and status
+                  let bgColor = 'bg-gray-200';
+                  if (dayData.isFuture) {
+                    bgColor = 'bg-gray-100';
+                  } else if (dayData.isToday) {
+                    bgColor = dayData.percentage >= 80 ? 'bg-green-500' : 
+                              dayData.percentage >= 50 ? 'bg-yellow-400' : 
+                              dayData.percentage > 0 ? 'bg-orange-400' : 'bg-blue-300';
+                  } else {
+                    bgColor = dayData.percentage >= 80 ? 'bg-green-500' : 
+                              dayData.percentage >= 50 ? 'bg-yellow-400' : 
+                              dayData.percentage > 0 ? 'bg-orange-400' : 'bg-gray-300';
+                  }
+                  
                   return (
                     <div key={index} className="text-center">
-                      <div className="text-xs text-gray-600 mb-2">{day}</div>
-                      <div className={`
-                        w-full aspect-square rounded-lg
-                        ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}
-                      `}></div>
+                      <div className={`text-xs mb-2 ${dayData.isToday ? 'font-bold text-blue-600' : 'text-gray-600'}`}>
+                        {dayData.day?.charAt(0) || ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index]}
+                      </div>
+                      <div className={`relative w-full aspect-square rounded-lg ${bgColor} ${dayData.isToday ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}>
+                        {!dayData.isFuture && dayData.percentage > 0 && (
+                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                            {dayData.percentage}%
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -435,6 +493,56 @@ export function Dashboard({ onNavigate }) {
                 </div>
               </div>
             </Card>
+
+            {/* Upcoming Mentor Sessions */}
+            {upcomingSessions.length > 0 && (
+              <Card className="border-2 border-gray-900 rounded-2xl p-6 md:p-8 bg-white">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Upcoming Sessions
+                </h2>
+                <div className="space-y-3">
+                  {upcomingSessions.slice(0, 3).map((session) => (
+                    <div key={session._id} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{session.topic}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            with {session.mentorId?.name || 'Mentor'}
+                          </p>
+                          <p className="text-sm text-purple-600 mt-1">
+                            {new Date(session.sessionDate).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                        {session.meetingLink && (
+                          <a
+                            href={session.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-full hover:bg-purple-700 transition-colors"
+                          >
+                            Join
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => onNavigate('mentors')}
+                  className="w-full mt-4 rounded-full border-2 border-black"
+                >
+                  View All Sessions
+                </Button>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}

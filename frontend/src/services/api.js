@@ -140,6 +140,12 @@ export const habitsAPI = {
     return response.data;
   },
 
+  // Add public template to user's habits
+  addFromTemplate: async (templateId, habitData = {}) => {
+    const response = await api.post(`/habits/from-template/${templateId}`, habitData);
+    return response.data;
+  },
+
   // Create new habit
   createHabit: async (habitData) => {
     const response = await api.post('/habits', habitData);
@@ -284,6 +290,12 @@ export const habitLogsAPI = {
   // Get all of today's logs for the current user
   getTodayLogs: async () => {
     const response = await api.get('/logs/today');
+    return response.data;
+  },
+
+  // Get weekly logs for the current week (Mon-Sun)
+  getWeeklyLogs: async () => {
+    const response = await api.get('/logs/weekly');
     return response.data;
   },
 
@@ -765,6 +777,30 @@ export const adminAPI = {
   // Delete flagged message
   deleteMessage: async (messageId) => {
     const response = await api.delete(`/admin/messages/${messageId}`);
+    return response.data;
+  },
+
+  // Get mentor applications
+  getMentorApplications: async (params = {}) => {
+    const response = await api.get('/admin/mentor-applications', { params });
+    return response.data;
+  },
+
+  // Get single mentor application
+  getMentorApplication: async (applicationId) => {
+    const response = await api.get(`/admin/mentor-applications/${applicationId}`);
+    return response.data;
+  },
+
+  // Approve mentor application
+  approveMentorApplication: async (applicationId) => {
+    const response = await api.put(`/admin/mentor-applications/${applicationId}/approve`);
+    return response.data;
+  },
+
+  // Reject mentor application
+  rejectMentorApplication: async (applicationId, reason) => {
+    const response = await api.put(`/admin/mentor-applications/${applicationId}/reject`, { reason });
     return response.data;
   },
 };

@@ -192,10 +192,10 @@ export function HabitManager({ onNavigate }) {
 
   const handleAddFromTemplate = async (template) => {
     try {
-      await habitsAPI.createHabit({
-        name: template.name,
-        description: template.description,
-        category: template.category,
+      await habitsAPI.addFromTemplate(template._id, {
+        userIntention: '',
+        dailyWindowStart: '06:00',
+        dailyWindowEnd: '22:00',
       });
       toast.success('Habit added from template!');
       setShowTemplatesModal(false);
@@ -204,6 +204,10 @@ export function HabitManager({ onNavigate }) {
       toast.error(error.response?.data?.msg || 'Failed to add habit');
     }
   };
+
+  // Separate habits into public (from public templates) and private (user-created)
+  const publicHabits = habits.filter(h => h.templateId?.isPublic === true);
+  const privateHabits = habits.filter(h => h.templateId?.isPublic !== true);
 
   if (isLoading) {
     return (
@@ -275,75 +279,170 @@ export function HabitManager({ onNavigate }) {
         )}
 
         {/* Habits List */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {habits.length > 0 ? (
-            habits.map((habit) => (
-              <Card
-                key={habit._id}
-                className="border-2 border-gray-200 rounded-2xl p-6 hover:border-gray-400 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold">{habit.templateId?.name || 'Habit'}</h3>
-                      <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-                        {habit.templateId?.category || 'General'}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mb-3">{habit.templateId?.description}</p>
-                    
-                    <div className="flex items-center gap-6 text-sm">
-                      <div className="flex items-center gap-1 text-orange-500">
-                        <Flame className="w-4 h-4" />
-                        <span className="font-medium">{habit.streak || 0} day streak</span>
-                      </div>
-                      {habit.dailyWindowStart && habit.dailyWindowEnd && (
-                        <div className="flex items-center gap-1 text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          <span>{habit.dailyWindowStart} - {habit.dailyWindowEnd}</span>
-                        </div>
-                      )}
-                      {habit.compassionatePauseCount > 0 && (
-                        <div className="flex items-center gap-1 text-purple-500">
-                          <Pause className="w-4 h-4" />
-                          <span>{habit.compassionatePauseCount} rest days used</span>
-                        </div>
-                      )}
-                    </div>
+            <>
+              {/* My Custom Habits (Private) */}
+              {privateHabits.length > 0 && (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Target className="w-5 h-5" />
+                    My Custom Habits
+                  </h2>
+                  <div className="space-y-4">
+                    {privateHabits.map((habit) => (
+                      <Card
+                        key={habit._id}
+                        className="border-2 border-gray-200 rounded-2xl p-6 hover:border-gray-400 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-xl font-bold">{habit.templateId?.name || 'Habit'}</h3>
+                              <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+                                {habit.templateId?.category || 'General'}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-3">{habit.templateId?.description}</p>
+                            
+                            <div className="flex items-center gap-6 text-sm">
+                              <div className="flex items-center gap-1 text-orange-500">
+                                <Flame className="w-4 h-4" />
+                                <span className="font-medium">{habit.streak || 0} day streak</span>
+                              </div>
+                              {habit.dailyWindowStart && habit.dailyWindowEnd && (
+                                <div className="flex items-center gap-1 text-gray-500">
+                                  <Clock className="w-4 h-4" />
+                                  <span>{habit.dailyWindowStart} - {habit.dailyWindowEnd}</span>
+                                </div>
+                              )}
+                              {habit.compassionatePauseCount > 0 && (
+                                <div className="flex items-center gap-1 text-purple-500">
+                                  <Pause className="w-4 h-4" />
+                                  <span>{habit.compassionatePauseCount} rest days used</span>
+                                </div>
+                              )}
+                            </div>
 
-                    {habit.userIntention && (
-                      <p className="mt-3 text-sm text-gray-500 italic">
-                        Goal: {habit.userIntention}
-                      </p>
-                    )}
-                  </div>
+                            {habit.userIntention && (
+                              <p className="mt-3 text-sm text-gray-500 italic">
+                                Goal: {habit.userIntention}
+                              </p>
+                            )}
+                          </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => setShowLogModal(habit)}
-                      className="rounded-full bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Log Today
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditingHabit(habit)}
-                      className="rounded-full border-2"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleDeleteHabit(habit._id)}
-                      className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() => setShowLogModal(habit)}
+                              className="rounded-full bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              Mark Done
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setEditingHabit(habit)}
+                              className="rounded-full border-2"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleDeleteHabit(habit._id)}
+                              className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 </div>
-              </Card>
-            ))
+              )}
+
+              {/* Public Template Habits */}
+              {publicHabits.length > 0 && (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    From Public Templates
+                  </h2>
+                  <div className="space-y-4">
+                    {publicHabits.map((habit) => (
+                      <Card
+                        key={habit._id}
+                        className="border-2 border-blue-100 rounded-2xl p-6 hover:border-blue-300 transition-colors bg-blue-50/30"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-xl font-bold">{habit.templateId?.name || 'Habit'}</h3>
+                              <span className="text-xs bg-blue-100 px-3 py-1 rounded-full text-blue-700">
+                                {habit.templateId?.category || 'General'}
+                              </span>
+                              <span className="text-xs bg-blue-200 px-2 py-1 rounded-full text-blue-800">
+                                Public
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-3">{habit.templateId?.description}</p>
+                            
+                            <div className="flex items-center gap-6 text-sm">
+                              <div className="flex items-center gap-1 text-orange-500">
+                                <Flame className="w-4 h-4" />
+                                <span className="font-medium">{habit.streak || 0} day streak</span>
+                              </div>
+                              {habit.dailyWindowStart && habit.dailyWindowEnd && (
+                                <div className="flex items-center gap-1 text-gray-500">
+                                  <Clock className="w-4 h-4" />
+                                  <span>{habit.dailyWindowStart} - {habit.dailyWindowEnd}</span>
+                                </div>
+                              )}
+                              {habit.compassionatePauseCount > 0 && (
+                                <div className="flex items-center gap-1 text-purple-500">
+                                  <Pause className="w-4 h-4" />
+                                  <span>{habit.compassionatePauseCount} rest days used</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {habit.userIntention && (
+                              <p className="mt-3 text-sm text-gray-500 italic">
+                                Goal: {habit.userIntention}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() => setShowLogModal(habit)}
+                              className="rounded-full bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              Mark Done
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setEditingHabit(habit)}
+                              className="rounded-full border-2"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleDeleteHabit(habit._id)}
+                              className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-12">
               <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -606,14 +705,9 @@ export function HabitManager({ onNavigate }) {
                   <Pause className="w-5 h-5 mr-2" />
                   Rest Day (keeps streak)
                 </Button>
-                <Button
-                  onClick={() => handleLogHabit(showLogModal._id, 'Failed')}
-                  variant="outline"
-                  className="w-full rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50 py-3"
-                >
-                  <XCircle className="w-5 h-5 mr-2" />
-                  Missed Today
-                </Button>
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Habits are automatically marked as missed if not completed within the time window
+                </p>
               </div>
             </div>
           </Card>

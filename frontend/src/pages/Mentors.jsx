@@ -46,6 +46,7 @@ export function Mentors({ onNavigate }) {
     expertise: [],
     bio: '',
     oneOnOneLink: '',
+    meetingLink: '',
   });
 
   const expertiseOptions = [
@@ -90,6 +91,7 @@ export function Mentors({ onNavigate }) {
           expertise: profileData.expertise || [],
           bio: profileData.bio || '',
           oneOnOneLink: profileData.oneOnOneLink || '',
+          meetingLink: profileData.meetingLink || '',
         });
       }
     } catch (error) {
@@ -476,6 +478,42 @@ export function Mentors({ onNavigate }) {
               </p>
             </div>
 
+            {/* Approval Status Banner */}
+            {myProfile && (
+              <div className={`mb-6 p-4 rounded-lg ${
+                myProfile.approvalStatus === 'approved' 
+                  ? 'bg-green-50 border border-green-200'
+                  : myProfile.approvalStatus === 'rejected'
+                  ? 'bg-red-50 border border-red-200'
+                  : 'bg-yellow-50 border border-yellow-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {myProfile.approvalStatus === 'approved' ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <span className="font-medium text-green-800">Your mentor profile is approved!</span>
+                    </>
+                  ) : myProfile.approvalStatus === 'rejected' ? (
+                    <>
+                      <X className="w-5 h-5 text-red-600" />
+                      <div>
+                        <span className="font-medium text-red-800">Application was not approved</span>
+                        {myProfile.rejectionReason && (
+                          <p className="text-sm text-red-600 mt-1">{myProfile.rejectionReason}</p>
+                        )}
+                        <p className="text-sm text-red-600 mt-1">Update your profile and resubmit for review.</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-5 h-5 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">Pending admin approval</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-6">
               {/* Bio */}
               <div>
@@ -510,17 +548,33 @@ export function Mentors({ onNavigate }) {
 
               {/* Meeting Link */}
               <div>
-                <label className="block text-sm font-medium mb-2">Meeting Link (optional)</label>
+                <label className="block text-sm font-medium mb-2">Meeting Link</label>
+                <Input
+                  value={mentorProfile.meetingLink}
+                  onChange={(e) => setMentorProfile(prev => ({ ...prev, meetingLink: e.target.value }))}
+                  placeholder="https://zoom.us/j/your-meeting-id or Google Meet link"
+                />
+                <p className="text-xs text-gray-500 mt-1">This link will be shared with mentees when sessions are booked</p>
+              </div>
+
+              {/* Scheduling Link */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Scheduling Link (optional)</label>
                 <Input
                   value={mentorProfile.oneOnOneLink}
                   onChange={(e) => setMentorProfile(prev => ({ ...prev, oneOnOneLink: e.target.value }))}
-                  placeholder="https://calendly.com/yourname or Zoom link"
+                  placeholder="https://calendly.com/yourname"
                 />
-                <p className="text-xs text-gray-500 mt-1">Add a Calendly, Zoom, or other meeting link</p>
+                <p className="text-xs text-gray-500 mt-1">Add a Calendly or other scheduling link for mentees to book time</p>
               </div>
 
               <Button onClick={handleUpdateMentorProfile} className="w-full rounded-full">
-                {myProfile ? 'Update Profile' : 'Create Mentor Profile'}
+                {myProfile 
+                  ? myProfile.approvalStatus === 'rejected'
+                    ? 'Resubmit Application'
+                    : 'Update Profile'
+                  : 'Submit Application'
+                }
               </Button>
             </div>
           </Card>
