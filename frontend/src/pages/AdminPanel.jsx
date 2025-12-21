@@ -68,7 +68,12 @@ export function AdminPanel({ onNavigate }) {
       const usersArray = Array.isArray(usersRes) ? usersRes : (usersRes?.users || []);
       setUsers(usersArray);
       setReports(Array.isArray(reportsRes) ? reportsRes : []);
-      setFlaggedContent(Array.isArray(flaggedRes) ? flaggedRes : (flaggedRes?.data || []));
+      // flaggedRes returns { flaggedFeedback: [], flaggedMessages: [] }
+      const combinedFlagged = [
+        ...(flaggedRes?.flaggedFeedback || []).map(f => ({ ...f, type: 'feedback' })),
+        ...(flaggedRes?.flaggedMessages || []).map(m => ({ ...m, type: 'message' }))
+      ];
+      setFlaggedContent(combinedFlagged);
       setMentorApplications(mentorAppsRes?.applications || []);
       setPendingMentorCount(mentorAppsRes?.pendingCount || 0);
       

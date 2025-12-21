@@ -27,6 +27,15 @@ import { toast } from 'sonner';
 import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, mentorsAPI, setLogoutCallback } from '../services/api';
 import { NotificationsDropdown } from '../components/NotificationsDropdown';
 
+// Helper to ensure URL has proper protocol
+const ensureHttps = (url) => {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  return `https://${url}`;
+};
+
 export function Dashboard({ onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [checkedHabits, setCheckedHabits] = useState([]);
@@ -557,7 +566,7 @@ export function Dashboard({ onNavigate }) {
                         </div>
                         {session.meetingLink && (
                           <a
-                            href={session.meetingLink}
+                            href={ensureHttps(session.meetingLink)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-full hover:bg-purple-700 transition-colors"

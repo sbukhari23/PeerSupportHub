@@ -22,6 +22,15 @@ import {
 import { toast } from 'sonner';
 import { authAPI, mentorsAPI, setLogoutCallback } from '../services/api';
 
+// Helper to ensure URL has proper protocol
+const ensureHttps = (url) => {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  return `https://${url}`;
+};
+
 export function Mentors({ onNavigate }) {
   const [mentors, setMentors] = useState([]);
   const [mySessions, setMySessions] = useState([]);
@@ -84,7 +93,9 @@ export function Mentors({ onNavigate }) {
         mentorsAPI.getMyMentorProfile().catch(() => null),
       ]);
       setMentors(mentorsData.mentors || mentorsData || []);
-      setMySessions(sessionsData.sessions || sessionsData || []);
+      // sessionsData returns { asMentor: [], asMentee: [], total: 0 }
+      const allSessions = [...(sessionsData?.asMentor || []), ...(sessionsData?.asMentee || [])];
+      setMySessions(allSessions);
       setSessionHistory(historyData.sessions || historyData || []);
       setMyProfile(profileData);
       
@@ -356,7 +367,7 @@ export function Mentors({ onNavigate }) {
                           <div>
                             <h3 className="font-semibold">{session.topic}</h3>
                             <p className="text-sm text-gray-500">
-                              with {session.mentorId?.userId?.name || session.menteeId?.name || 'User'}
+                              with {session.mentorId?.name || session.menteeId?.name || 'User'}
                             </p>
                             <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
                               <Clock className="w-4 h-4" />
@@ -365,9 +376,19 @@ export function Mentors({ onNavigate }) {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {session.meetingLink && (
+                            <a
+                              href={ensureHttps(session.meetingLink)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition-colors"
+                            >
+                              Join
+                            </a>
+                          )}
                           {session.status === 'scheduled' && (
                             <>
-                              {userData._id === session.mentorId?.userId?._id && (
+                              {userData._id === session.mentorId?._id && (
                                 <Button
                                   onClick={() => handleCompleteSession(session._id)}
                                   size="sm"
