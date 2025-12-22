@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, habitsAPI, habitLogsAPI, profileAPI, setLogoutCallback } from '../services/api';
+import { TopNavBar } from '../components/TopNavBar';
 
 export function HabitManager({ onNavigate }) {
   const [habits, setHabits] = useState([]);
@@ -230,6 +231,9 @@ export function HabitManager({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <TopNavBar currentPage="habits" onNavigate={onNavigate} />
+      
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4">
@@ -281,7 +285,7 @@ export function HabitManager({ onNavigate }) {
             </Card>
             <Card className="border-2 border-gray-200 rounded-xl p-4 text-center">
               <div className="text-3xl font-bold text-blue-600">{stats.totalDaysLogged}</div>
-              <div className="text-sm text-gray-600">Days Logged</div>
+              <div className="text-sm text-gray-600">Days Tracked</div>
             </Card>
           </div>
         )}

@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, profileAPI, setLogoutCallback } from '../services/api';
+import { TopNavBar } from '../components/TopNavBar';
 
 export function Buddies({ onNavigate }) {
   const [buddies, setBuddies] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -81,12 +83,14 @@ export function Buddies({ onNavigate }) {
 
   const fetchBuddyData = async () => {
     try {
-      const [buddiesData, requestsData] = await Promise.all([
+      const [buddiesData, requestsData, sentData] = await Promise.all([
         profileAPI.getBuddies().catch(() => []),
         profileAPI.getBuddyRequests().catch(() => []),
+        profileAPI.getSentBuddyRequests().catch(() => []),
       ]);
       setBuddies(buddiesData);
       setPendingRequests(requestsData);
+      setSentRequests(sentData);
     } catch (error) {
       console.error('Error fetching buddy data:', error);
       toast.error('Failed to load buddies');
@@ -154,6 +158,9 @@ export function Buddies({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <TopNavBar currentPage="buddies" onNavigate={onNavigate} />
+      
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4">
@@ -244,9 +251,17 @@ export function Buddies({ onNavigate }) {
                     className="border-2 border-gray-200 rounded-2xl p-4 hover:border-gray-400 transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-xl font-bold">
-                        {buddy.name?.charAt(0) || '?'}
-                      </div>
+                      {buddy.avatarUrl ? (
+                        <img 
+                          src={buddy.avatarUrl}
+                          alt={buddy.name}
+                          className="w-14 h-14 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-xl font-bold">
+                          {buddy.name?.charAt(0) || '?'}
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h3 className="font-bold text-lg">{buddy.name}</h3>
                         <p className="text-gray-500 text-sm">@{buddy.username}</p>
@@ -292,50 +307,94 @@ export function Buddies({ onNavigate }) {
 
         {/* Pending Requests Tab */}
         {activeTab === 'requests' && (
-          <div className="space-y-4">
-            {pendingRequests.length > 0 ? (
-              pendingRequests.map((request) => (
-                <Card
-                  key={request._id}
-                  className="border-2 border-gray-200 rounded-2xl p-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
-                      {request.sender?.name?.charAt(0) || '?'}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg">{request.sender?.name}</h3>
-                      <p className="text-gray-500 text-sm">@{request.sender?.username}</p>
-                      <p className="text-gray-600 text-sm mt-1">Wants to be your accountability buddy</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleAcceptRequest(request._id)}
-                        className="rounded-full bg-green-600 hover:bg-green-700"
-                      >
-                        <Check className="w-4 h-4 mr-1" />
-                        Accept
-                      </Button>
-                      <Button
-                        onClick={() => handleRejectRequest(request._id)}
-                        variant="outline"
-                        className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+          <div className="space-y-6">
+            {/* Received Requests */}
+            <div>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Received Requests ({pendingRequests.length})
+              </h2>
+              {pendingRequests.length > 0 ? (
+                <div className="space-y-4">
+                  {pendingRequests.map((request) => (
+                    <Card
+                      key={request._id}
+                      className="border-2 border-gray-200 rounded-2xl p-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
+                          {request.sender?.name?.charAt(0) || '?'}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg">{request.sender?.name}</h3>
+                          <p className="text-gray-500 text-sm">@{request.sender?.username}</p>
+                          <p className="text-gray-600 text-sm mt-1">Wants to be your accountability buddy</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleAcceptRequest(request._id)}
+                            className="rounded-full bg-green-600 hover:bg-green-700"
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            onClick={() => handleRejectRequest(request._id)}
+                            variant="outline"
+                            className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-6 text-center border-2 border-gray-200 rounded-2xl">
+                  <p className="text-gray-500">No pending requests received</p>
                 </Card>
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-600 mb-2">No pending requests</h3>
-                <p className="text-gray-500">
-                  When someone sends you a buddy request, it will appear here
-                </p>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Sent Requests */}
+            <div>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Sent Requests ({sentRequests.length})
+              </h2>
+              {sentRequests.length > 0 ? (
+                <div className="space-y-4">
+                  {sentRequests.map((request) => (
+                    <Card
+                      key={request._id}
+                      className="border-2 border-yellow-200 bg-yellow-50/50 rounded-2xl p-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center text-xl font-bold text-yellow-600">
+                          {request.recipient?.name?.charAt(0) || '?'}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg">{request.recipient?.name}</h3>
+                          <p className="text-gray-500 text-sm">@{request.recipient?.username}</p>
+                          <p className="text-yellow-600 text-sm mt-1 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Awaiting response
+                          </p>
+                        </div>
+                        <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">
+                          Pending
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-6 text-center border-2 border-gray-200 rounded-2xl">
+                  <p className="text-gray-500">You haven't sent any buddy requests yet</p>
+                </Card>
+              )}
+            </div>
           </div>
         )}
 
@@ -374,13 +433,21 @@ export function Buddies({ onNavigate }) {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
-                        user.buddyStatus === 'buddy'
-                          ? 'bg-gradient-to-br from-green-200 to-green-300 text-green-700'
-                          : 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600'
-                      }`}>
-                        {user.name?.charAt(0) || '?'}
-                      </div>
+                      {user.avatarUrl ? (
+                        <img 
+                          src={user.avatarUrl}
+                          alt={user.name}
+                          className="w-14 h-14 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
+                          user.buddyStatus === 'buddy'
+                            ? 'bg-gradient-to-br from-green-200 to-green-300 text-green-700'
+                            : 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600'
+                        }`}>
+                          {user.name?.charAt(0) || '?'}
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h3 className="font-bold text-lg">{user.name}</h3>
                         <p className="text-gray-500 text-sm">@{user.username}</p>

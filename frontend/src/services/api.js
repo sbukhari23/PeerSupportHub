@@ -230,6 +230,24 @@ export const profileAPI = {
     return response.data;
   },
 
+  // Upload avatar
+  uploadAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const response = await api.post('/profile/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Remove avatar
+  removeAvatar: async () => {
+    const response = await api.delete('/profile/avatar');
+    return response.data;
+  },
+
   // Get user's overall stats
   getStats: async () => {
     const response = await api.get('/profile/stats');
@@ -262,9 +280,15 @@ export const profileAPI = {
     return response.data;
   },
 
-  // Get all pending buddy requests
+  // Get all pending buddy requests (received)
   getBuddyRequests: async () => {
     const response = await api.get('/profile/buddy/requests');
+    return response.data;
+  },
+
+  // Get all sent buddy requests (pending)
+  getSentBuddyRequests: async () => {
+    const response = await api.get('/profile/buddy/sent-requests');
     return response.data;
   },
 
@@ -836,7 +860,17 @@ export const adminAPI = {
 
   // Delete content
   deleteContent: async (contentId, contentType) => {
-    const response = await api.delete(`/admin/${contentType}/${contentId}`);
+    // contentType is 'feedback' or 'message'
+    const endpoint = contentType === 'message' ? 'messages' : 'feedback';
+    const response = await api.delete(`/admin/${endpoint}/${contentId}`);
+    return response.data;
+  },
+
+  // Resolve flagged content (unflag without deleting)
+  resolveContent: async (contentId, contentType) => {
+    // contentType is 'feedback' or 'message'
+    const endpoint = contentType === 'message' ? 'messages' : 'feedback';
+    const response = await api.put(`/admin/${endpoint}/${contentId}/resolve`);
     return response.data;
   },
 

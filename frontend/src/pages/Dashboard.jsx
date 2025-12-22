@@ -5,6 +5,7 @@ import { Progress } from '../components/ui/progress';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { TopNavBar } from '../components/TopNavBar';
 import { 
   CheckCircle2, 
   Circle, 
@@ -22,6 +23,8 @@ import {
   Bell,
   Shield,
   Pause,
+  GraduationCap,
+  User,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, habitsAPI, groupsAPI, profileAPI, habitLogsAPI, mentorsAPI, setLogoutCallback } from '../services/api';
@@ -92,7 +95,7 @@ export function Dashboard({ onNavigate }) {
           profileAPI.getBuddyRequests().catch(() => []),
           habitLogsAPI.getTodayLogs().catch(() => []),
           habitLogsAPI.getWeeklyLogs().catch(() => []),
-          mentorsAPI.getUpcomingSessions().catch(() => ({ asMentee: [] })),
+          mentorsAPI.getUpcomingSessions().catch(() => ({ asMentor: [], asMentee: [] })),
         ]);
         setHabits(habitsData);
         setGroups(groupsData);
@@ -115,8 +118,9 @@ export function Dashboard({ onNavigate }) {
         // Process weekly data for the week view
         setWeeklyData(weeklyLogsData);
         
-        // Set upcoming mentor sessions
-        setUpcomingSessions(sessionsData.asMentee || []);
+        // Set upcoming mentor sessions (both as mentor and mentee)
+        const allSessions = [...(sessionsData.asMentor || []), ...(sessionsData.asMentee || [])];
+        setUpcomingSessions(allSessions);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -133,6 +137,7 @@ export function Dashboard({ onNavigate }) {
     name: h.templateId?.name || h.name || 'Habit',
     completed: false,
     streak: h.streak || 0,
+    isPublic: h.templateId?.isPublic || false,
   })) : [];
 
   const weekProgress = stats?.completionRateRaw || 0;
@@ -382,9 +387,28 @@ export function Dashboard({ onNavigate }) {
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                Welcome back, {userName}! 👋
-              </h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl md:text-4xl font-bold">
+                  Welcome back, {userName}! 👋
+                </h1>
+                {/* User Role Badge */}
+                {userData.userType === 'Admin' ? (
+                  <span className="flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </span>
+                ) : userData.userType === 'Mentor' ? (
+                  <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                    <GraduationCap className="w-4 h-4" />
+                    Mentor
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                    <User className="w-4 h-4" />
+                    Member
+                  </span>
+                )}
+              </div>
               <p className="text-gray-600 text-lg">
                 {loggedToday === totalHabits 
                   ? "Amazing! You've completed all your habits today!" 
@@ -410,7 +434,7 @@ export function Dashboard({ onNavigate }) {
                 <h2 className="text-2xl font-bold">Today's Habits</h2>
                 <div className="text-right">
                   <div className="text-2xl font-bold">{loggedToday}/{totalHabits}</div>
-                  <div className="text-sm text-gray-600">logged</div>
+                  <div className="text-sm text-gray-600">tracked</div>
                 </div>
               </div>
 
@@ -454,6 +478,7 @@ export function Dashboard({ onNavigate }) {
                           : 'text-gray-900'
                       }`}>
                         {habit.name}
+                        {habit.isPublic && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Public</span>}
                         {isPaused && <span className="ml-2 text-xs text-purple-500">(Rest Day)</span>}
                       </span>
                       {habit.streak > 0 && (
@@ -476,7 +501,7 @@ export function Dashboard({ onNavigate }) {
                 onClick={() => onNavigate('habits')}
                 className="w-full mt-6 rounded-full bg-black hover:bg-gray-800 py-6 text-lg"
               >
-                + Add New Habit
+                Manage My Habits
               </Button>
             </Card>
 
@@ -546,37 +571,51 @@ export function Dashboard({ onNavigate }) {
                   Upcoming Sessions
                 </h2>
                 <div className="space-y-3">
-                  {upcomingSessions.slice(0, 3).map((session) => (
-                    <div key={session._id} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{session.topic}</h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            with {session.mentorId?.name || 'Mentor'}
-                          </p>
-                          <p className="text-sm text-purple-600 mt-1">
-                            {new Date(session.sessionDate).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                  {upcomingSessions.slice(0, 3).map((session) => {
+                    const currentUser = authAPI.getCurrentUser();
+                    const isMentor = session.mentorId?._id === currentUser?.id || session.mentorId === currentUser?.id;
+                    return (
+                      <div key={session._id} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900">{session.topic}</h4>
+                              {isMentor && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                  You're mentoring
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {isMentor 
+                                ? `with ${session.menteeId?.name || 'Mentee'}`
+                                : `with ${session.mentorId?.name || 'Mentor'}`
+                              }
+                            </p>
+                            <p className="text-sm text-purple-600 mt-1">
+                              {new Date(session.sessionDate).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                          {session.meetingLink && (
+                            <a
+                              href={ensureHttps(session.meetingLink)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-full hover:bg-purple-700 transition-colors"
+                            >
+                              Join
+                            </a>
+                          )}
                         </div>
-                        {session.meetingLink && (
-                          <a
-                            href={ensureHttps(session.meetingLink)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-full hover:bg-purple-700 transition-colors"
-                          >
-                            Join
-                          </a>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <Button 
                   variant="outline"

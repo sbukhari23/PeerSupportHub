@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, messagesAPI, setLogoutCallback } from '../services/api';
+import { TopNavBar } from '../components/TopNavBar';
 
 export function Messages({ userId, onNavigate }) {
   const [conversations, setConversations] = useState([]);
@@ -168,6 +169,9 @@ export function Messages({ userId, onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Top Navigation Bar */}
+      <TopNavBar currentPage="messages" onNavigate={onNavigate} />
+      
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3">
@@ -175,11 +179,16 @@ export function Messages({ userId, onNavigate }) {
             <button
               onClick={() => {
                 if (activeConversation && !userId) {
+                  // In a conversation from messages list - go back to list
                   setActiveConversation(null);
                   setOtherUser(null);
                   setMessages([]);
                   fetchConversations();
+                } else if (userId) {
+                  // Coming from buddy chat - go back to buddies
+                  onNavigate('buddies');
                 } else {
+                  // In messages list - go back to dashboard
                   onNavigate('dashboard');
                 }
               }}

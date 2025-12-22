@@ -13,6 +13,9 @@ import {
   Calendar,
   Heart,
   AlertCircle,
+  GraduationCap,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { notificationsAPI } from '../services/api';
 
@@ -109,12 +112,25 @@ export function NotificationsDropdown({ onNavigate }) {
         return <MessageCircle className="w-5 h-5 text-green-500" />;
       case 'challenge':
       case 'challenge_complete':
+      case 'challenge_invite':
         return <Trophy className="w-5 h-5 text-yellow-500" />;
       case 'session':
       case 'session_reminder':
+      case 'mentor_session':
         return <Calendar className="w-5 h-5 text-purple-500" />;
+      case 'mentor_application_approved':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'mentor_application_rejected':
+        return <XCircle className="w-5 h-5 text-red-500" />;
       case 'feedback':
         return <Heart className="w-5 h-5 text-pink-500" />;
+      case 'streak_milestone':
+      case 'habit_reminder':
+        return <AlertCircle className="w-5 h-5 text-orange-500" />;
+      case 'group_invite':
+        return <Users className="w-5 h-5 text-indigo-500" />;
+      case 'system':
+        return <Bell className="w-5 h-5 text-gray-600" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -155,11 +171,22 @@ export function NotificationsDropdown({ onNavigate }) {
           break;
         case 'challenge':
         case 'challenge_complete':
+        case 'challenge_invite':
           onNavigate('challenges');
           break;
         case 'session':
         case 'session_reminder':
+        case 'mentor_session':
+        case 'mentor_application_approved':
+        case 'mentor_application_rejected':
           onNavigate('mentors');
+          break;
+        case 'habit_reminder':
+        case 'streak_milestone':
+          onNavigate('habits');
+          break;
+        case 'group_invite':
+          onNavigate('groups');
           break;
         default:
           break;

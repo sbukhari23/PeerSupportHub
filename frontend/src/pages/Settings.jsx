@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -18,17 +18,22 @@ import {
   Moon,
   Sun,
   Check,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, profileAPI, notificationsAPI, setLogoutCallback } from '../services/api';
+import { TopNavBar } from '../components/TopNavBar';
 
 export function Settings({ onNavigate }) {
   const [, setProfile] = useState(null); // Profile state for potential future use
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'notifications', 'preferences'
   const [unreadCount, setUnreadCount] = useState(0);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -36,6 +41,7 @@ export function Settings({ onNavigate }) {
     email: '',
     gender: '',
     bio: '',
+    avatarUrl: null,
   });
 
   const [settings, setSettings] = useState({
@@ -72,6 +78,7 @@ export function Settings({ onNavigate }) {
           email: profileData.email || '',
           gender: profileData.gender || '',
           bio: profileData.bio || '',
+          avatarUrl: profileData.avatarUrl || null,
         });
         setSettings(profileData.settings || {
           language: 'en',
@@ -87,6 +94,58 @@ export function Settings({ onNavigate }) {
       toast.error('Failed to load profile');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Only image files are allowed (jpg, png, gif, webp)');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const result = await profileAPI.uploadAvatar(file);
+      setFormData(prev => ({ ...prev, avatarUrl: result.avatarUrl }));
+      toast.success('Profile picture updated!');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error(error.response?.data?.msg || 'Failed to upload profile picture');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setIsUploadingAvatar(true);
+    try {
+      await profileAPI.removeAvatar();
+      setFormData(prev => ({ ...prev, avatarUrl: null }));
+      toast.success('Profile picture removed!');
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      toast.error(error.response?.data?.msg || 'Failed to remove profile picture');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -127,7 +186,7 @@ export function Settings({ onNavigate }) {
     onNavigate('home');
   };
 
-  const genderOptions = ['Male', 'Female', 'Non-Binary', 'Prefer not to say'];
+  const genderOptions = ['Male', 'Female'];
   const contentPreferences = ['Guided', 'Self-directed', 'Mixed'];
 
   if (isLoading) {
@@ -143,6 +202,9 @@ export function Settings({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <TopNavBar currentPage="settings" onNavigate={onNavigate} />
+      
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4">
@@ -199,17 +261,51 @@ export function Settings({ onNavigate }) {
             {/* Avatar Section */}
             <div className="flex items-center gap-6 mb-8 pb-8 border-b">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                  {formData.name?.charAt(0) || 'U'}
-                </div>
-                <button className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border hover:bg-gray-50">
+                {formData.avatarUrl ? (
+                  <img 
+                    src={formData.avatarUrl}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                    {formData.name?.charAt(0) || 'U'}
+                  </div>
+                )}
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  </div>
+                )}
+                <button 
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                  className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg border hover:bg-gray-50 disabled:opacity-50"
+                >
                   <Camera className="w-4 h-4" />
                 </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  className="hidden"
+                />
               </div>
               <div>
                 <h2 className="text-xl font-semibold">{formData.name}</h2>
                 <p className="text-gray-500">@{formData.username}</p>
                 <p className="text-sm text-gray-400">{formData.email}</p>
+                {formData.avatarUrl && (
+                  <button
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploadingAvatar}
+                    className="mt-2 text-sm text-red-500 hover:text-red-600 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Remove photo
+                  </button>
+                )}
               </div>
             </div>
 

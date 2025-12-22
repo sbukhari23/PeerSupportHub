@@ -11,6 +11,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { adminAPI, authAPI, setLogoutCallback } from '../services/api';
 import { toast } from 'sonner';
+import { TopNavBar } from '../components/TopNavBar';
 
 export function AdminPanel({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -133,6 +134,17 @@ export function AdminPanel({ onNavigate }) {
     }
   };
 
+  const handleResolveContent = async (contentId, contentType) => {
+    try {
+      await adminAPI.resolveContent(contentId, contentType);
+      toast.success('Content resolved successfully');
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error resolving content:', error);
+      toast.error('Failed to resolve content');
+    }
+  };
+
   const handleResolveReport = async (reportId) => {
     try {
       await adminAPI.resolveReport(reportId);
@@ -237,6 +249,9 @@ export function AdminPanel({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <TopNavBar currentPage="admin" onNavigate={onNavigate} />
+      
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -718,7 +733,7 @@ export function AdminPanel({ onNavigate }) {
             ) : (
               flaggedContent.map((content) => (
                 <Card key={content._id} className="p-6 border-2 border-gray-200 rounded-2xl">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="w-5 h-5 text-red-500" />
@@ -726,13 +741,31 @@ export function AdminPanel({ onNavigate }) {
                       </div>
                       <p className="text-gray-700 mb-2 line-clamp-3">{content.text || content.content}</p>
                       <p className="text-gray-500 text-sm">
-                        Author: {content.author?.name || 'Unknown'}
+                        Author: {content.senderId?.name || content.author?.name || 'Unknown'}
                       </p>
+                      {content.groupId && (
+                        <p className="text-gray-500 text-sm">
+                          Group: {content.groupId?.name || 'Unknown group'}
+                        </p>
+                      )}
+                      {content.recipientId && (
+                        <p className="text-gray-500 text-sm">
+                          To: {content.recipientId?.name || 'Unknown recipient'}
+                        </p>
+                      )}
                       <p className="text-gray-500 text-sm">
-                        Reason: {content.flagReason || 'Community guidelines violation'}
+                        Flagged: {content.flaggedAt ? new Date(content.flaggedAt).toLocaleDateString() : 'Recently'}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleResolveContent(content._id, content.type)}
+                        className="rounded-full text-green-600 border-green-600 hover:bg-green-50"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Resolve
+                      </Button>
                       <Button
                         variant="outline"
                         onClick={() => handleDeleteContent(content._id, content.type)}

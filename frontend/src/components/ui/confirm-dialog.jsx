@@ -51,11 +51,11 @@ export function ConfirmDialog({
             {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex gap-2 sm:gap-0 mt-4">
+        <DialogFooter className="flex gap-3 mt-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none rounded-full"
           >
             {cancelText}
           </Button>
@@ -64,7 +64,7 @@ export function ConfirmDialog({
               onConfirm();
               onOpenChange(false);
             }}
-            className={`flex-1 sm:flex-none ${getButtonStyle()}`}
+            className={`flex-1 sm:flex-none rounded-full ${getButtonStyle()}`}
           >
             {confirmText}
           </Button>
