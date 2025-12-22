@@ -54,6 +54,16 @@ export default function App() {
 
   const [currentPage, setCurrentPage] = useState(getInitialPage);
 
+  // Initialize dark mode from local storage
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   // Custom navigation function that also updates the URL
   const navigate = useCallback((page) => {
     setCurrentPage(page);
@@ -143,6 +153,8 @@ export default function App() {
         return <Mentors onNavigate={navigate} />;
       case 'settings':
         return <Settings onNavigate={navigate} />;
+      case 'notifications':
+        return <Settings onNavigate={navigate} defaultTab="notifications" />;
       case 'admin':
         return <AdminPanel onNavigate={navigate} />;
       default:
@@ -166,6 +178,7 @@ export default function App() {
     'reflections',
     'mentors',
     'settings',
+    'notifications',
     'admin',
   ].includes(currentPage) || currentPage.startsWith('group-chat-') || currentPage.startsWith('messages-');
 

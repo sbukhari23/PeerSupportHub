@@ -20,10 +20,10 @@ export function Footer({ onNavigate }) {
   };
 
   return (
-    <footer className="bg-white border-t border-gray-200 px-6 py-8">
+    <footer className="bg-background border-t border-border px-6 py-8">
       <div className="max-w-xl mx-auto space-y-6">
         {/* Navigation Links */}
-        <div className="flex flex-wrap justify-center gap-4 text-gray-600">
+        <div className="flex flex-wrap justify-center gap-4 text-muted-foreground">
           {links.map((link, index) => (
             <span key={link.label} className="flex items-center gap-4">
               <button 
@@ -33,7 +33,7 @@ export function Footer({ onNavigate }) {
                 {link.label}
               </button>
               {index < links.length - 1 && (
-                <span className="text-gray-300">|</span>
+                <span className="text-muted-foreground/50">|</span>
               )}
             </span>
           ))}
@@ -48,7 +48,7 @@ export function Footer({ onNavigate }) {
                 key={social.label}
                 href={social.href}
                 aria-label={social.label}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Icon className="w-5 h-5" />
               </a>
@@ -57,7 +57,7 @@ export function Footer({ onNavigate }) {
         </div>
 
         {/* Copyright */}
-        <div className="text-center text-gray-500">
+        <div className="text-center text-muted-foreground">
           <p>© PeerSupportHub 2025</p>
         </div>
       </div>

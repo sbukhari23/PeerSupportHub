@@ -226,15 +226,17 @@ export function GroupChat({ groupId, onNavigate }) {
     
     try {
       await messagesAPI.reactToMessage(messageId, emoji);
-      // Fetch to sync with server (in background)
-      fetchGroupAndMessages();
+      // Don't refetch immediately - let the optimistic update stand
+      // The next poll cycle will sync with server
     } catch {
       toast.error('Failed to add reaction');
-      // Revert on error
+      // Revert on error by refetching
       fetchGroupAndMessages();
     } finally {
-      // Allow future reactions
-      delete window._pendingReactions?.[reactionKey];
+      // Allow future reactions after a short delay
+      setTimeout(() => {
+        delete window._pendingReactions?.[reactionKey];
+      }, 500);
     }
   };
 

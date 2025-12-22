@@ -157,26 +157,26 @@ export function Buddies({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Top Navigation Bar */}
       <TopNavBar currentPage="buddies" onNavigate={onNavigate} />
       
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 hover:text-gray-900">
+              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <ArrowLeft className="w-6 h-6" />
               </button>
-              <h1 className="text-2xl font-bold">Accountability Buddies</h1>
+              <h1 className="text-2xl font-bold text-foreground">Accountability Buddies</h1>
             </div>
             {pendingRequests.length > 0 && (
               <button
                 onClick={() => setActiveTab('requests')}
-                className="relative p-2 rounded-full hover:bg-gray-100"
+                className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-muted"
               >
-                <Bell className="w-6 h-6" />
+                <Bell className="w-6 h-6 dark:text-gray-400" />
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {pendingRequests.length}
                 </span>
@@ -193,8 +193,8 @@ export function Buddies({ onNavigate }) {
             onClick={() => setActiveTab('buddies')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               activeTab === 'buddies'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             My Buddies ({buddies.length})
@@ -203,8 +203,8 @@ export function Buddies({ onNavigate }) {
             onClick={() => setActiveTab('requests')}
             className={`px-6 py-2 rounded-full font-medium transition-colors relative ${
               activeTab === 'requests'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             Pending Requests
@@ -218,8 +218,8 @@ export function Buddies({ onNavigate }) {
             onClick={() => setActiveTab('find')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               activeTab === 'find'
-                ? 'bg-blue-600 text-white'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                ? 'bg-blue-600 text-white dark:bg-blue-700'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'
             }`}
           >
             <UserPlus className="w-4 h-4 inline mr-2" />
@@ -232,13 +232,13 @@ export function Buddies({ onNavigate }) {
           <>
             {/* Search */}
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <Input
                 type="text"
                 placeholder="Search your buddies..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 py-3 rounded-full border-2 border-gray-300"
+                className="pl-12 py-3 rounded-full border-2 border-gray-300 dark:border-input dark:bg-input dark:text-foreground"
               />
             </div>
 

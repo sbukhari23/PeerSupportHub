@@ -180,24 +180,24 @@ export function Reflections({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Top Navigation Bar */}
       <TopNavBar currentPage="reflections" onNavigate={onNavigate} />
       
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 hover:text-gray-900">
+              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <ArrowLeft className="w-6 h-6" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold">Reflections</h1>
-                <p className="text-sm text-gray-500">Track your thoughts and growth</p>
+                <h1 className="text-2xl font-bold text-foreground">Reflections</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Track your thoughts and growth</p>
               </div>
             </div>
-            <Button onClick={() => setShowCreateModal(true)} className="rounded-full">
+            <Button onClick={() => setShowCreateModal(true)} className="rounded-full dark:bg-primary dark:text-primary-foreground">
               <Plus className="w-4 h-4 mr-2" />
               New Entry
             </Button>
@@ -209,25 +209,25 @@ export function Reflections({ onNavigate }) {
         {/* Stats Overview */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center dark:bg-card dark:border-border dark:text-card-foreground">
               <BookOpen className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold">{stats.totalEntries || 0}</p>
-              <p className="text-xs text-gray-500">Total Entries</p>
+              <p className="text-2xl font-bold text-foreground">{stats.totalEntries || 0}</p>
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">Total Entries</p>
             </Card>
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center dark:bg-card dark:border-border dark:text-card-foreground">
               <Calendar className="w-6 h-6 text-green-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold">{stats.currentStreak || 0}</p>
-              <p className="text-xs text-gray-500">Day Streak</p>
+              <p className="text-2xl font-bold text-foreground">{stats.currentStreak || 0}</p>
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">Day Streak</p>
             </Card>
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center dark:bg-card dark:border-border dark:text-card-foreground">
               <Smile className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold">{stats.averageMood || 'N/A'}</p>
-              <p className="text-xs text-gray-500">Avg Mood</p>
+              <p className="text-2xl font-bold text-foreground">{stats.averageMood || 'N/A'}</p>
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">Avg Mood</p>
             </Card>
-            <Card className="p-4 text-center">
+            <Card className="p-4 text-center dark:bg-card dark:border-border dark:text-card-foreground">
               <Heart className="w-6 h-6 text-red-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold">{stats.gratitudeCount || 0}</p>
-              <p className="text-xs text-gray-500">Gratitudes</p>
+              <p className="text-2xl font-bold text-foreground">{stats.gratitudeCount || 0}</p>
+              <p className="text-xs text-gray-500 dark:text-muted-foreground">Gratitudes</p>
             </Card>
           </div>
         )}
@@ -237,7 +237,9 @@ export function Reflections({ onNavigate }) {
           <button
             onClick={() => setActiveFilter('all')}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              activeFilter === 'all' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+              activeFilter === 'all' 
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground' 
+                : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-card dark:text-muted-foreground dark:hover:bg-muted'
             }`}
           >
             All
@@ -247,7 +249,9 @@ export function Reflections({ onNavigate }) {
               key={type.value}
               onClick={() => setActiveFilter(type.value)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeFilter === type.value ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+                activeFilter === type.value 
+                  ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground' 
+                  : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-card dark:text-muted-foreground dark:hover:bg-muted'
               }`}
             >
               {type.icon}

@@ -105,7 +105,11 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.banUser(userId);
       toast.success('User banned successfully');
-      fetchAdminData();
+      // Update state locally instead of reloading
+      setUsers(prev => prev.map(u => u._id === userId ? { ...u, isBanned: true } : u));
+      if (selectedUser?._id === userId) {
+        setSelectedUser(prev => ({ ...prev, isBanned: true }));
+      }
     } catch (error) {
       console.error('Error banning user:', error);
       toast.error('Failed to ban user');
@@ -116,7 +120,11 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.unbanUser(userId);
       toast.success('User unbanned successfully');
-      fetchAdminData();
+      // Update state locally instead of reloading
+      setUsers(prev => prev.map(u => u._id === userId ? { ...u, isBanned: false } : u));
+      if (selectedUser?._id === userId) {
+        setSelectedUser(prev => ({ ...prev, isBanned: false }));
+      }
     } catch (error) {
       console.error('Error unbanning user:', error);
       toast.error('Failed to unban user');
@@ -127,7 +135,8 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.deleteContent(contentId, contentType);
       toast.success('Content deleted successfully');
-      fetchAdminData();
+      // Remove from flagged content list locally
+      setFlaggedContent(prev => prev.filter(c => c._id !== contentId));
     } catch (error) {
       console.error('Error deleting content:', error);
       toast.error('Failed to delete content');
@@ -138,7 +147,8 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.resolveContent(contentId, contentType);
       toast.success('Content resolved successfully');
-      fetchAdminData();
+      // Remove from flagged content list locally
+      setFlaggedContent(prev => prev.filter(c => c._id !== contentId));
     } catch (error) {
       console.error('Error resolving content:', error);
       toast.error('Failed to resolve content');
@@ -149,7 +159,8 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.resolveReport(reportId);
       toast.success('Report resolved');
-      fetchAdminData();
+      // Remove from reports list locally
+      setReports(prev => prev.filter(r => r._id !== reportId));
     } catch (error) {
       console.error('Error resolving report:', error);
       toast.error('Failed to resolve report');
@@ -165,7 +176,9 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.approveMentorApplication(applicationId);
       toast.success('Mentor application approved!');
-      fetchAdminData();
+      // Remove from applications list and update count
+      setMentorApplications(prev => prev.filter(a => a._id !== applicationId));
+      setPendingMentorCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error approving mentor:', error);
       toast.error('Failed to approve mentor application');
@@ -178,9 +191,11 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.rejectMentorApplication(showRejectModal, rejectionReason);
       toast.success('Mentor application rejected');
+      // Remove from applications list and update count
+      setMentorApplications(prev => prev.filter(a => a._id !== showRejectModal));
+      setPendingMentorCount(prev => Math.max(0, prev - 1));
       setShowRejectModal(null);
       setRejectionReason('');
-      fetchAdminData();
     } catch (error) {
       console.error('Error rejecting mentor:', error);
       toast.error('Failed to reject mentor application');
@@ -191,7 +206,9 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.approveHabitTemplate(templateId);
       toast.success('Template approved and made public!');
-      fetchAdminData();
+      // Update template status locally
+      setHabitTemplates(prev => prev.map(t => t._id === templateId ? { ...t, isPublic: true } : t));
+      setPendingTemplatesCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error approving template:', error);
       toast.error('Failed to approve template');
@@ -202,7 +219,9 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.revokeHabitTemplate(templateId);
       toast.success('Template public status revoked');
-      fetchAdminData();
+      // Update template status locally
+      setHabitTemplates(prev => prev.map(t => t._id === templateId ? { ...t, isPublic: false } : t));
+      setPendingTemplatesCount(prev => prev + 1);
     } catch (error) {
       console.error('Error revoking template:', error);
       toast.error('Failed to revoke template');
@@ -210,11 +229,15 @@ export function AdminPanel({ onNavigate }) {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (!window.confirm('Are you sure you want to delete this template?')) return;
     try {
       await adminAPI.deleteHabitTemplate(templateId);
       toast.success('Template deleted successfully');
-      fetchAdminData();
+      // Remove template from list locally
+      const template = habitTemplates.find(t => t._id === templateId);
+      setHabitTemplates(prev => prev.filter(t => t._id !== templateId));
+      if (template && !template.isPublic) {
+        setPendingTemplatesCount(prev => Math.max(0, prev - 1));
+      };
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error('Failed to delete template');

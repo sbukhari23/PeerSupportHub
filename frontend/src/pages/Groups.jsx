@@ -136,23 +136,23 @@ export function Groups({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Top Navigation Bar */}
       <TopNavBar currentPage="groups" onNavigate={onNavigate} />
       
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 hover:text-gray-900">
+              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <ArrowLeft className="w-6 h-6" />
               </button>
-              <h1 className="text-2xl font-bold">Groups</h1>
+              <h1 className="text-2xl font-bold text-foreground">Groups</h1>
             </div>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="rounded-full bg-black hover:bg-gray-800"
+              className="rounded-full bg-black hover:bg-gray-800 dark:bg-primary dark:text-primary-foreground"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Group
@@ -168,8 +168,8 @@ export function Groups({ onNavigate }) {
             onClick={() => setActiveTab('discover')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               activeTab === 'discover'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             Discover Groups
@@ -178,8 +178,8 @@ export function Groups({ onNavigate }) {
             onClick={() => setActiveTab('my-groups')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               activeTab === 'my-groups'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             My Groups ({myGroups.length})
@@ -188,13 +188,13 @@ export function Groups({ onNavigate }) {
 
         {/* Search */}
         <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
           <Input
             type="text"
             placeholder="Search groups..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 py-3 rounded-full border-2 border-gray-300"
+            className="pl-12 py-3 rounded-full border-2 border-gray-300 dark:border-input dark:bg-input dark:text-foreground"
           />
         </div>
 
@@ -204,23 +204,23 @@ export function Groups({ onNavigate }) {
             filteredGroups.map((group) => (
               <Card
                 key={group._id}
-                className="border-2 border-gray-200 rounded-2xl p-6 hover:border-gray-400 transition-colors"
+                className="border-2 border-gray-200 rounded-2xl p-6 hover:border-gray-400 transition-colors dark:border-border dark:bg-card dark:text-card-foreground"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-gray-600" />
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center dark:bg-muted">
+                    <Users className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                   </div>
-                  <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+                  <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600 dark:bg-muted dark:text-muted-foreground">
                     {group.type || 'Group'}
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold mb-2">{group.name}</h3>
+                <h3 className="text-xl font-bold mb-2 text-foreground">{group.name}</h3>
                 {group.topicFocus && (
-                  <p className="text-gray-600 text-sm mb-4">{group.topicFocus}</p>
+                  <p className="text-gray-600 text-sm mb-4 dark:text-muted-foreground">{group.topicFocus}</p>
                 )}
 
-                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4 dark:text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
                     {group.members?.length || 0} members
@@ -232,7 +232,7 @@ export function Groups({ onNavigate }) {
                     <>
                       <Button
                         onClick={() => onNavigate(`group-chat-${group._id}`)}
-                        className="flex-1 rounded-full bg-black hover:bg-gray-800"
+                        className="flex-1 rounded-full bg-black hover:bg-gray-800 dark:bg-primary dark:text-primary-foreground"
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Open Chat
@@ -240,7 +240,7 @@ export function Groups({ onNavigate }) {
                       <Button
                         variant="outline"
                         onClick={() => handleLeaveGroup(group._id)}
-                        className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50"
+                        className="rounded-full border-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         <LogOut className="w-4 h-4" />
                       </Button>
@@ -248,7 +248,7 @@ export function Groups({ onNavigate }) {
                   ) : (
                     <Button
                       onClick={() => handleJoinGroup(group._id)}
-                      className="w-full rounded-full bg-black hover:bg-gray-800"
+                      className="w-full rounded-full bg-black hover:bg-gray-800 dark:bg-primary dark:text-primary-foreground"
                     >
                       Join Group
                     </Button>
