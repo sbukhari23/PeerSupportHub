@@ -6,6 +6,7 @@ const DailyLog = require('../models/DailyLog');
 const BuddyRequest = require('../models/BuddyRequest');
 const { protect } = require('../middleware/authMiddleware');
 const { objectIdValidation, validate } = require('../middleware/validationMiddleware');
+const { sendBuddyRequestNotification, sendBuddyAcceptedNotification } = require('../utils/notificationService');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -181,9 +182,10 @@ router.get('/stats', protect, async (req, res) => {
       userHabitId: { $in: userHabitIds },
     });
 
+    // Count both Completed and Paused (rest day) as successful completions
     const completedLogs = await DailyLog.countDocuments({
       userHabitId: { $in: userHabitIds },
-      completionStatus: 'Completed',
+      completionStatus: { $in: ['Completed', 'Paused'] },
     });
 
     const completionRate = totalLogs === 0 ? 0 : (completedLogs / totalLogs) * 100;
@@ -459,6 +461,14 @@ router.post(
 
     await newRequest.save();
 
+    // Send notification to the recipient
+    try {
+      const io = req.app.get('io');
+      await sendBuddyRequestNotification(io, targetUserId, req.user._id.toString(), req.user.name);
+    } catch (notifError) {
+      console.error('Failed to send buddy request notification:', notifError);
+    }
+
     res.json({ msg: 'Buddy request sent' });
   } catch (err) {
     console.error(err.message);
@@ -504,6 +514,14 @@ router.put(
     await User.findByIdAndUpdate(request.sender, { 
       $addToSet: { buddies: req.user._id }
     });
+
+    // Send notification to the requester that their request was accepted
+    try {
+      const io = req.app.get('io');
+      await sendBuddyAcceptedNotification(io, request.sender.toString(), req.user.name);
+    } catch (notifError) {
+      console.error('Failed to send buddy accepted notification:', notifError);
+    }
 
     res.json({ msg: 'Buddy request accepted' });
   } catch (err) {

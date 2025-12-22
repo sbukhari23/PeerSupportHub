@@ -497,4 +497,93 @@ router.delete('/direct/:messageId', protect, async (req, res) => {
   }
 });
 
+// @route   POST /api/messages/direct/:messageId/react
+// @desc    Add emoji reaction to direct message
+// @access  Private
+router.post('/direct/:messageId/react', protect, async (req, res) => {
+  try {
+    const { emoji } = req.body;
+    const message = await Message.findById(req.params.messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Ensure it's a direct message
+    if (!message.recipientId) {
+      return res.status(400).json({ message: 'This is not a direct message' });
+    }
+
+    // Validate emoji
+    if (!emoji || emoji.trim().length === 0) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    // Check if user is part of this conversation
+    const isSender = message.senderId.toString() === req.user._id.toString();
+    const isRecipient = message.recipientId.toString() === req.user._id.toString();
+    if (!isSender && !isRecipient) {
+      return res.status(403).json({ message: 'You are not part of this conversation' });
+    }
+
+    // Check if user already reacted with this emoji
+    const existingReaction = message.reactions.find(
+      (r) => r.userId.toString() === req.user._id.toString() && r.emoji === emoji
+    );
+
+    if (existingReaction) {
+      // Remove reaction (toggle)
+      message.reactions = message.reactions.filter(
+        (r) => !(r.userId.toString() === req.user._id.toString() && r.emoji === emoji)
+      );
+    } else {
+      // Add reaction
+      message.reactions.push({
+        userId: req.user._id,
+        emoji: emoji.trim(),
+      });
+    }
+
+    await message.save();
+    await message.populate('reactions.userId', 'name username');
+
+    res.json(message);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/messages/direct/:messageId/flag
+// @desc    Flag direct message for moderation
+// @access  Private
+router.post('/direct/:messageId/flag', protect, async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Ensure it's a direct message
+    if (!message.recipientId) {
+      return res.status(400).json({ message: 'This is not a direct message' });
+    }
+
+    // Check if user is part of this conversation
+    const isSender = message.senderId.toString() === req.user._id.toString();
+    const isRecipient = message.recipientId.toString() === req.user._id.toString();
+    if (!isSender && !isRecipient) {
+      return res.status(403).json({ message: 'You are not part of this conversation' });
+    }
+
+    // Flag message
+    message.flaggedForModeration = true;
+    await message.save();
+
+    res.json({ message: 'Message flagged for moderation' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;

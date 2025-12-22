@@ -134,20 +134,49 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private
 router.post('/', protect, async (req, res) => {
   try {
-    const { entryType, date, content, moodRating, energyState } = req.body;
+    const { entryType, type, date, content, moodRating, mood, energyState, gratitude, goals } = req.body;
 
-    if (!entryType || !date) {
-      return res.status(400).json({ msg: 'Please provide entryType and date' });
+    // Map frontend type to backend entryType if needed
+    const typeMapping = {
+      'Daily': 'MoodEnergyLog',
+      'Weekly': 'WeeklyReview',
+      'Gratitude': 'GratitudeLog',
+      'Goals': 'WeeklyReview',
+      'Freeform': 'MoodEnergyLog',
+    };
+
+    const moodMapping = {
+      'Great': 5,
+      'Good': 4,
+      'Neutral': 3,
+      'Low': 2,
+      'Difficult': 1,
+    };
+
+    // Use entryType if provided, otherwise map from type
+    const finalEntryType = entryType || typeMapping[type] || 'MoodEnergyLog';
+    // Use date if provided, otherwise use current date
+    const finalDate = date ? new Date(date) : new Date();
+    // Use moodRating if provided, otherwise map from mood string
+    const finalMoodRating = moodRating || (mood ? moodMapping[mood] : undefined);
+
+    // Build content from multiple fields if needed
+    let finalContent = content || '';
+    if (gratitude) {
+      finalContent += `\n\n**Gratitude:** ${gratitude}`;
+    }
+    if (goals) {
+      finalContent += `\n\n**Goals:** ${goals}`;
     }
 
     // Validate entry type
     const validTypes = ['GratitudeLog', 'WeeklyReview', 'MoodEnergyLog'];
-    if (!validTypes.includes(entryType)) {
+    if (!validTypes.includes(finalEntryType)) {
       return res.status(400).json({ msg: 'Invalid entry type' });
     }
 
     // Validate mood rating if provided
-    if (moodRating && (moodRating < 1 || moodRating > 5)) {
+    if (finalMoodRating && (finalMoodRating < 1 || finalMoodRating > 5)) {
       return res.status(400).json({ msg: 'Mood rating must be between 1 and 5' });
     }
 
@@ -158,10 +187,10 @@ router.post('/', protect, async (req, res) => {
 
     const reflection = await ReflectionEntry.create({
       userId: req.user._id,
-      entryType,
-      date: new Date(date),
-      content,
-      moodRating,
+      entryType: finalEntryType,
+      date: finalDate,
+      content: finalContent.trim(),
+      moodRating: finalMoodRating,
       energyState,
     });
 
