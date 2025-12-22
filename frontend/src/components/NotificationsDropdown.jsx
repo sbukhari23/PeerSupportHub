@@ -154,20 +154,39 @@ export function NotificationsDropdown({ onNavigate }) {
   const handleNotificationClick = (notification) => {
     handleMarkAsRead(notification._id);
     
-    // Navigate based on notification type
+    // Navigate based on notification link or type
+    // The link from backend now uses the correct hash format (e.g., group-chat-{id}, messages-{id})
     if (notification.link) {
-      onNavigate(notification.link);
+      let link = notification.link;
+      
+      // Fix legacy/bad links from old notifications
+      if (link.includes('/dashboard/habits')) link = 'habits';
+      if (link.includes('/profile/buddy')) link = 'buddies';
+      
+      // Remove leading slash if present
+      if (link.startsWith('/')) link = link.substring(1);
+      
+      onNavigate(link);
     } else {
+      // Fallback to type-based navigation
       switch (notification.type) {
         case 'buddy_request':
         case 'buddy_accepted':
           onNavigate('buddies');
           break;
         case 'message':
-          onNavigate(`messages-${notification.relatedId}`);
+          if (notification.relatedId) {
+            onNavigate(`messages-${notification.relatedId}`);
+          } else {
+            onNavigate('messages');
+          }
           break;
         case 'group_message':
-          onNavigate(`group-chat-${notification.relatedId}`);
+          if (notification.relatedId) {
+            onNavigate(`group-chat-${notification.relatedId}`);
+          } else {
+            onNavigate('groups');
+          }
           break;
         case 'challenge':
         case 'challenge_complete':
@@ -210,7 +229,7 @@ export function NotificationsDropdown({ onNavigate }) {
       </button>
 
       {isOpen && (
-        <Card className="absolute right-0 mt-2 w-80 md:w-96 max-h-[70vh] overflow-hidden shadow-xl z-50 bg-card border-border">
+        <Card className="absolute right-0 mt-2 w-80 md:w-96 max-h-[70vh] overflow-hidden shadow-xl z-[9999] bg-card border-border">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
             <h3 className="font-semibold text-foreground">Notifications</h3>
@@ -255,9 +274,9 @@ export function NotificationsDropdown({ onNavigate }) {
                     <p className={`text-sm ${!notification.read ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {notification.title || notification.message}
                     </p>
-                    {notification.body && (
+                    {(notification.message && notification.title) && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {notification.body}
+                        {notification.message}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground/70 mt-1">

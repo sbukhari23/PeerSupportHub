@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, messagesAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function Messages({ userId, onNavigate }) {
   const [conversations, setConversations] = useState([]);
@@ -40,11 +39,12 @@ export function Messages({ userId, onNavigate }) {
       return;
     }
 
-    // If userId is provided, open that conversation directly
+    // Always fetch all conversations first
+    fetchConversations();
+    
+    // If userId is provided, also open that conversation directly
     if (userId) {
       loadConversation(userId, true);
-    } else {
-      fetchConversations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, onNavigate]);
@@ -153,21 +153,30 @@ export function Messages({ userId, onNavigate }) {
     if (window._pendingDMReactions?.[reactionKey]) return;
     window._pendingDMReactions = { ...window._pendingDMReactions, [reactionKey]: true };
     
-    // Optimistic update
+    // Optimistic update (one reaction per user)
     setMessages(prev => prev.map(msg => {
       if (msg._id === messageId) {
         const getUserId = (r) => r.userId?._id || r.userId;
-        const existingReaction = msg.reactions?.find(
+        const existingReactionIndex = msg.reactions?.findIndex(
           r => getUserId(r)?.toString() === userData._id?.toString() && r.emoji === emoji
         );
-        if (existingReaction) {
+        const userHasAnyReactionIndex = msg.reactions?.findIndex(
+          r => getUserId(r)?.toString() === userData._id?.toString()
+        );
+        
+        if (existingReactionIndex !== -1 && existingReactionIndex !== undefined) {
+          // Remove reaction (toggle off)
           return {
             ...msg,
-            reactions: msg.reactions.filter(
-              r => !(getUserId(r)?.toString() === userData._id?.toString() && r.emoji === emoji)
-            )
+            reactions: msg.reactions.filter((_, i) => i !== existingReactionIndex)
           };
+        } else if (userHasAnyReactionIndex !== -1 && userHasAnyReactionIndex !== undefined) {
+          // Replace existing reaction with new one
+          const newReactions = [...msg.reactions];
+          newReactions[userHasAnyReactionIndex] = { userId: userData._id, emoji };
+          return { ...msg, reactions: newReactions };
         } else {
+          // Add new reaction
           return {
             ...msg,
             reactions: [...(msg.reactions || []), { userId: userData._id, emoji }]
@@ -242,8 +251,6 @@ export function Messages({ userId, onNavigate }) {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="messages" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-card border-b border-border px-4 py-3 flex items-center gap-3 shrink-0">
@@ -309,7 +316,7 @@ export function Messages({ userId, onNavigate }) {
                       isActive ? 'bg-accent' : ''
                     }`}
                   >
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center shrink-0 text-lg font-bold text-muted-foreground">
+                    <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center shrink-0 text-lg font-bold text-white">
                       {conv.user.name?.charAt(0) || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -342,7 +349,7 @@ export function Messages({ userId, onNavigate }) {
             <>
               {/* Chat Header */}
               <div className="p-3 border-b border-border bg-card flex items-center gap-3">
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center font-bold text-muted-foreground">
+                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center font-bold text-white">
                   {otherUser?.name?.charAt(0) || '?'}
                 </div>
                 <div>
@@ -373,7 +380,7 @@ export function Messages({ userId, onNavigate }) {
                         <div className={`max-w-[75%] ${isOwn ? 'order-1' : ''}`}>
                           <div className="flex items-end gap-2">
                             {!isOwn && (
-                              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-muted-foreground">
+                              <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white">
                                 {otherUser?.name?.charAt(0) || '?'}
                               </div>
                             )}
@@ -398,7 +405,7 @@ export function Messages({ userId, onNavigate }) {
                             </div>
 
                             {/* Message actions */}
-                            <div className={`flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${isOwn ? 'order-first mr-1' : 'ml-1'}`}>
+                            <div className={`flex gap-1 ${isOwn ? 'order-first mr-2' : 'ml-2'}`}>
                               <div className="relative">
                                 <button
                                   onClick={(e) => {

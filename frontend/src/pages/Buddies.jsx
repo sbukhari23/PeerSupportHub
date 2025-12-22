@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, profileAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function Buddies({ onNavigate }) {
   const [buddies, setBuddies] = useState([]);
@@ -48,7 +47,9 @@ export function Buddies({ onNavigate }) {
         setIsSearching(true);
         try {
           const results = await profileAPI.searchUsers(findSearchTerm, 20);
-          setSearchResults(results);
+          // Filter out users who are already buddies
+          const filteredResults = results.filter(user => user.buddyStatus !== 'buddy');
+          setSearchResults(filteredResults);
         } catch (error) {
           console.error('Error searching users:', error);
           toast.error('Failed to search users');
@@ -70,7 +71,9 @@ export function Buddies({ onNavigate }) {
         setIsSearching(true);
         try {
           const results = await profileAPI.searchUsers('', 20);
-          setSearchResults(results);
+          // Filter out users who are already buddies
+          const filteredResults = results.filter(user => user.buddyStatus !== 'buddy');
+          setSearchResults(filteredResults);
         } catch (error) {
           console.error('Error loading users:', error);
         } finally {
@@ -103,11 +106,22 @@ export function Buddies({ onNavigate }) {
     try {
       await profileAPI.acceptBuddyRequest(requestId);
       toast.success('Buddy request accepted!');
-      fetchBuddyData();
-      // Refresh search results if on find tab
+      // Update local state immediately - remove from pending requests
+      setPendingRequests(prev => prev.filter(r => r._id !== requestId));
+      // Refetch buddies to include the new buddy
+      const [buddiesData, sentData] = await Promise.all([
+        profileAPI.getBuddies().catch(() => []),
+        profileAPI.getSentBuddyRequests().catch(() => []),
+      ]);
+      setBuddies(buddiesData);
+      setSentRequests(sentData);
+      // Dispatch custom event so TopNavBar can update its badge
+      window.dispatchEvent(new CustomEvent('buddyRequestsUpdated'));
+      // Refresh search results if on find tab (filter out new buddy)
       if (activeTab === 'find') {
         const results = await profileAPI.searchUsers(findSearchTerm, 20);
-        setSearchResults(results);
+        const filteredResults = results.filter(user => user.buddyStatus !== 'buddy');
+        setSearchResults(filteredResults);
       }
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to accept request');
@@ -118,7 +132,10 @@ export function Buddies({ onNavigate }) {
     try {
       await profileAPI.rejectBuddyRequest(requestId);
       toast.success('Request declined');
-      fetchBuddyData();
+      // Update local state immediately
+      setPendingRequests(prev => prev.filter(r => r._id !== requestId));
+      // Dispatch custom event so TopNavBar can update its badge
+      window.dispatchEvent(new CustomEvent('buddyRequestsUpdated'));
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to reject request');
     }
@@ -158,8 +175,6 @@ export function Buddies({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="buddies" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
@@ -258,7 +273,7 @@ export function Buddies({ onNavigate }) {
                           className="w-14 h-14 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-xl font-bold">
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {buddy.name?.charAt(0) || '?'}
                         </div>
                       )}
@@ -322,7 +337,7 @@ export function Buddies({ onNavigate }) {
                       className="border-2 border-gray-200 rounded-2xl p-4"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {request.sender?.name?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1">
@@ -371,7 +386,7 @@ export function Buddies({ onNavigate }) {
                       className="border-2 border-yellow-200 bg-yellow-50/50 rounded-2xl p-4"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center text-xl font-bold text-yellow-600">
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {request.recipient?.name?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1">
@@ -440,11 +455,7 @@ export function Buddies({ onNavigate }) {
                           className="w-14 h-14 rounded-full object-cover"
                         />
                       ) : (
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
-                          user.buddyStatus === 'buddy'
-                            ? 'bg-gradient-to-br from-green-200 to-green-300 text-green-700'
-                            : 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600'
-                        }`}>
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {user.name?.charAt(0) || '?'}
                         </div>
                       )}

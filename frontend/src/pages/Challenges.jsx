@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, challengesAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function Challenges({ onNavigate }) {
   const [challenges, setChallenges] = useState([]);
@@ -141,8 +140,6 @@ export function Challenges({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="challenges" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">

@@ -17,7 +17,7 @@ import {
 import { authAPI, profileAPI } from '../services/api';
 import { NotificationsDropdown } from './NotificationsDropdown';
 
-export function TopNavBar({ currentPage, onNavigate }) {
+export function TopNavBar({ onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   
@@ -33,10 +33,20 @@ export function TopNavBar({ currentPage, onNavigate }) {
         console.error('Failed to fetch buddy requests', error);
       }
     };
-    
+
     if (authAPI.isAuthenticated()) {
       fetchRequests();
     }
+
+    // Listen for buddy requests updates from Buddies page
+    const handleBuddyRequestsUpdated = () => {
+      if (authAPI.isAuthenticated()) {
+        fetchRequests();
+      }
+    };
+
+    window.addEventListener('buddyRequestsUpdated', handleBuddyRequestsUpdated);
+    return () => window.removeEventListener('buddyRequestsUpdated', handleBuddyRequestsUpdated);
   }, []);
 
   const handleLogout = () => {

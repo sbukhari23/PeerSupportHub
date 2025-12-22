@@ -1,16 +1,7 @@
-import { Instagram, Linkedin, Youtube } from 'lucide-react';
-
 export function Footer({ onNavigate }) {
   const links = [
     { label: 'FAQs', page: 'faqs' },
     { label: 'Contact', page: 'contact' },
-    { label: 'Terms', page: null },
-    { label: 'Privacy', page: null },
-  ];
-  const socialLinks = [
-    { icon: Instagram, label: 'Instagram', href: '#' },
-    { icon: Linkedin, label: 'LinkedIn', href: '#' },
-    { icon: Youtube, label: 'YouTube', href: '#' },
   ];
 
   const handleClick = (page) => {
@@ -37,23 +28,6 @@ export function Footer({ onNavigate }) {
               )}
             </span>
           ))}
-        </div>
-
-        {/* Social Icons */}
-        <div className="flex justify-center gap-6">
-          {socialLinks.map((social) => {
-            const Icon = social.icon;
-            return (
-              <a
-                key={social.label}
-                href={social.href}
-                aria-label={social.label}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Icon className="w-5 h-5" />
-              </a>
-            );
-          })}
         </div>
 
         {/* Copyright */}

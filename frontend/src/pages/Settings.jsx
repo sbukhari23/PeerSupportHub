@@ -8,22 +8,16 @@ import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   ArrowLeft,
   User,
-  Settings as SettingsIcon,
   Bell,
   Shield,
   LogOut,
   Save,
   Camera,
-  Globe,
-  Moon,
-  Sun,
-  Check,
   Trash2,
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, profileAPI, notificationsAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function Settings({ onNavigate, defaultTab }) {
   const [, setProfile] = useState(null); // Profile state for potential future use
@@ -198,7 +192,6 @@ export function Settings({ onNavigate, defaultTab }) {
   };
 
   const genderOptions = ['Male', 'Female'];
-  const contentPreferences = ['Guided', 'Self-directed', 'Mixed'];
 
   if (isLoading) {
     return (
@@ -213,8 +206,6 @@ export function Settings({ onNavigate, defaultTab }) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="settings" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
@@ -244,7 +235,6 @@ export function Settings({ onNavigate, defaultTab }) {
           {[
             { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
             { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
-            { id: 'preferences', label: 'Preferences', icon: <SettingsIcon className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -279,7 +269,7 @@ export function Settings({ onNavigate, defaultTab }) {
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                  <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center text-white text-3xl font-bold">
                     {formData.name?.charAt(0) || 'U'}
                   </div>
                 )}
@@ -405,112 +395,9 @@ export function Settings({ onNavigate, defaultTab }) {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium text-foreground">Email Notifications</p>
-                  <p className="text-sm text-muted-foreground">Receive weekly digests and important updates</p>
-                </div>
-                <button
-                  onClick={() => setSettings(prev => ({ ...prev, emailNotifications: !prev.emailNotifications }))}
-                  className={`w-12 h-6 rounded-full transition-colors ${
-                    settings.emailNotifications ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    settings.emailNotifications ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
-
               <Button onClick={handleUpdateProfile} disabled={isSaving} className="rounded-full">
                 <Save className="w-4 h-4 mr-2" />
                 {isSaving ? 'Saving...' : 'Save Settings'}
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {/* Preferences Tab */}
-        {activeTab === 'preferences' && (
-          <Card className="p-8">
-            <h2 className="text-lg font-semibold mb-6 text-foreground">App Preferences</h2>
-            
-            <div className="space-y-6">
-              {/* Theme */}
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="font-medium mb-3 text-foreground">Theme</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSettings(prev => ({ ...prev, darkMode: false }))}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      !settings.darkMode
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card text-muted-foreground border border-border hover:bg-accent'
-                    }`}
-                  >
-                    <Sun className="w-4 h-4" />
-                    Light
-                  </button>
-                  <button
-                    onClick={() => setSettings(prev => ({ ...prev, darkMode: true }))}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      settings.darkMode
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card text-muted-foreground border border-border hover:bg-accent'
-                    }`}
-                  >
-                    <Moon className="w-4 h-4" />
-                    Dark
-                  </button>
-                </div>
-              </div>
-
-              {/* Language */}
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="font-medium mb-3 flex items-center gap-2 text-foreground">
-                  <Globe className="w-4 h-4" />
-                  Language
-                </p>
-                <select
-                  value={settings.language}
-                  onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
-                  className="w-full p-2 rounded-lg border border-border bg-card text-foreground"
-                >
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                  <option value="fr">Français</option>
-                  <option value="de">Deutsch</option>
-                </select>
-              </div>
-
-              {/* Content Preference */}
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="font-medium mb-3 text-foreground">Content Preference</p>
-                <div className="flex flex-wrap gap-2">
-                  {contentPreferences.map((pref) => (
-                    <button
-                      key={pref}
-                      onClick={() => setSettings(prev => ({ ...prev, contentPreference: pref }))}
-                      className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                        settings.contentPreference === pref
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card text-muted-foreground border border-border hover:bg-accent'
-                      }`}
-                    >
-                      {pref}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {settings.contentPreference === 'Guided' && 'Structured programs and step-by-step guidance'}
-                  {settings.contentPreference === 'Self-directed' && 'Flexible approach with full control over your journey'}
-                  {settings.contentPreference === 'Mixed' && 'A balance of guided and self-directed content'}
-                </p>
-              </div>
-
-              <Button onClick={handleUpdateProfile} disabled={isSaving} className="rounded-full">
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save Preferences'}
               </Button>
             </div>
           </Card>

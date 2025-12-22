@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, mentorsAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 // Helper to ensure URL has proper protocol
 const ensureHttps = (url) => {
@@ -234,8 +233,6 @@ export function Mentors({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="mentors" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
@@ -298,7 +295,7 @@ export function Mentors({ onNavigate }) {
                 filteredMentors.map((mentor) => (
                   <Card key={mentor._id} className="p-6 hover:shadow-lg transition-shadow dark:bg-card dark:border-border dark:text-card-foreground">
                     <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                      <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center text-white text-xl font-bold">
                         {mentor.userId?.name?.charAt(0) || 'M'}
                       </div>
                       <div className="flex-1">
@@ -630,7 +627,7 @@ export function Mentors({ onNavigate }) {
             </div>
 
             <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-bold">
                 {selectedMentor.userId?.name?.charAt(0) || 'M'}
               </div>
               <div>

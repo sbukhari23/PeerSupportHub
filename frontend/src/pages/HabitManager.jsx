@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, habitsAPI, habitLogsAPI, profileAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function HabitManager({ onNavigate }) {
   const [habits, setHabits] = useState([]);
@@ -231,8 +230,6 @@ export function HabitManager({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="habits" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">

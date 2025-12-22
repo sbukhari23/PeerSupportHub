@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Toaster } from './components/ui/sonner';
 import { Header } from './pages/Header';
+import { TopNavBar } from './components/TopNavBar';
 import { Home } from './pages/Home';
 import { HowItWorks } from './pages/HowItWorks';
 import { Membership } from './pages/Membership';
@@ -30,10 +31,14 @@ import { authAPI } from './services/api';
 // Pages that require authentication
 const protectedPages = ['dashboard', 'groups', 'buddies', 'messages', 'habits', 'onboarding', 'payment', 'challenges', 'reflections', 'mentors', 'settings', 'admin'];
 
+// Public-only pages that logged-in users should NOT see (redirect to dashboard)
+const publicOnlyPages = ['home', 'how-it-works', 'membership', 'community', 'login', 'signup', 'forgot-password'];
+
 export default function App() {
   // Get initial page from URL hash or default based on auth status
   const getInitialPage = () => {
     const hash = window.location.hash.slice(1); // Remove the '#'
+    const isAuthenticated = authAPI.isAuthenticated();
     
     if (hash) {
       // Check if it's a protected page and user is not authenticated
@@ -42,14 +47,20 @@ export default function App() {
                           hash.startsWith('group-chat-') || 
                           hash.startsWith('messages-');
       
-      if (isProtected && !authAPI.isAuthenticated()) {
+      if (isProtected && !isAuthenticated) {
         return 'login';
       }
+      
+      // If authenticated and trying to access public-only pages, redirect to dashboard
+      if (isAuthenticated && publicOnlyPages.includes(hash)) {
+        return 'dashboard';
+      }
+      
       return hash;
     }
     
     // Default: if authenticated go to dashboard, else home
-    return authAPI.isAuthenticated() ? 'dashboard' : 'home';
+    return isAuthenticated ? 'dashboard' : 'home';
   };
 
   const [currentPage, setCurrentPage] = useState(getInitialPage);
@@ -66,6 +77,10 @@ export default function App() {
 
   // Custom navigation function that also updates the URL
   const navigate = useCallback((page) => {
+    // Avoid unnecessary updates if already on this page
+    if (page === window.location.hash.slice(1)) {
+      return;
+    }
     setCurrentPage(page);
     window.location.hash = page;
   }, []);
@@ -74,6 +89,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1) || 'home';
+      const isAuthenticated = authAPI.isAuthenticated();
       
       // Check if it's a protected page and user is not authenticated
       const basePage = hash.split('-')[0];
@@ -81,12 +97,19 @@ export default function App() {
                           hash.startsWith('group-chat-') || 
                           hash.startsWith('messages-');
       
-      if (isProtected && !authAPI.isAuthenticated()) {
+      if (isProtected && !isAuthenticated) {
         navigate('login');
         return;
       }
       
-      setCurrentPage(hash);
+      // If authenticated and trying to access public-only pages, redirect to dashboard
+      if (isAuthenticated && publicOnlyPages.includes(hash)) {
+        navigate('dashboard');
+        return;
+      }
+      
+      // Only update if the page actually changed
+      setCurrentPage(prev => prev === hash ? prev : hash);
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -182,9 +205,14 @@ export default function App() {
     'admin',
   ].includes(currentPage) || currentPage.startsWith('group-chat-') || currentPage.startsWith('messages-');
 
+  const shouldShowTopNavBar = (protectedPages.includes(currentPage.split('-')[0]) && !['onboarding', 'payment'].includes(currentPage.split('-')[0])) || 
+                          currentPage.startsWith('group-chat-') || 
+                          currentPage.startsWith('messages-');
+
   return (
     <div className="min-h-screen bg-white">
       {!hasCustomLayout && <Header currentPage={currentPage} onNavigate={navigate} />}
+      {shouldShowTopNavBar && <TopNavBar currentPage={currentPage} onNavigate={navigate} />}
       <main>
         {renderPage()}
       </main>

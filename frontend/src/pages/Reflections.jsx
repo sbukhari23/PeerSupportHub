@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, reflectionsAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function Reflections({ onNavigate }) {
   const [reflections, setReflections] = useState([]);
@@ -181,8 +180,6 @@ export function Reflections({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="reflections" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">

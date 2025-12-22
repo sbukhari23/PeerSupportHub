@@ -11,7 +11,6 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { adminAPI, authAPI, setLogoutCallback } from '../services/api';
 import { toast } from 'sonner';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function AdminPanel({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -272,8 +271,6 @@ export function AdminPanel({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="admin" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -549,7 +546,7 @@ export function AdminPanel({ onNavigate }) {
                 <Card key={application._id} className="p-6 border-2 border-gray-200 rounded-2xl">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-bold">
                         {application.userId?.name?.charAt(0) || 'M'}
                       </div>
                       <div className="flex-1">

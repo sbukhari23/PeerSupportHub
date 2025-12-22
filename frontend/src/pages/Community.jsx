@@ -1,12 +1,9 @@
-import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { Users, MessageCircle, Trophy, Heart } from 'lucide-react';
 
 export function Community({ onNavigate }) {
-  const [selectedGroup, setSelectedGroup] = useState(null);
-
   const peerGroups = [
     {
       name: "Study Focus Group",
@@ -71,13 +68,12 @@ export function Community({ onNavigate }) {
     { name: "Casey P.", streak: 33 },
   ];
 
-  const handleJoinGroup = (groupName) => {
-    setSelectedGroup(groupName);
-    alert(`Dashboard integration coming soon! You selected: ${groupName}`);
+  const handleJoinGroup = () => {
+    onNavigate('signup');
   };
 
-  const handleAskQuestion = (mentorName) => {
-    alert(`Mentor Q&A form coming soon for ${mentorName}!`);
+  const handleAskQuestion = () => {
+    onNavigate('signup');
   };
 
   const scrollToPeerGroups = () => {
@@ -161,7 +157,7 @@ export function Community({ onNavigate }) {
                     </p>
                     <Button 
                       className="rounded-full bg-black hover:bg-gray-800 px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
-                      onClick={() => handleJoinGroup(group.name)}
+                      onClick={handleJoinGroup}
                     >
                       Join Group
                     </Button>
@@ -175,7 +171,7 @@ export function Community({ onNavigate }) {
             <Button 
               variant="outline" 
               className="rounded-full border-2 border-black px-10 py-7 text-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg"
-              onClick={() => alert('Groups list page coming soon!')}
+              onClick={() => onNavigate('signup')}
             >
               View All Groups
             </Button>
@@ -211,7 +207,7 @@ export function Community({ onNavigate }) {
                     <Button 
                       variant="outline" 
                       className="rounded-full border-2 border-black px-8 py-6 text-lg hover:bg-gray-50 transition-all shadow-md hover:shadow-lg"
-                      onClick={() => handleAskQuestion(mentor.name)}
+                      onClick={handleAskQuestion}
                     >
                       Ask a Question
                     </Button>
@@ -257,7 +253,7 @@ export function Community({ onNavigate }) {
 
             <Button 
               className="rounded-full bg-black hover:bg-gray-800 px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
-              onClick={() => alert('Challenge dashboard coming soon!')}
+              onClick={() => onNavigate('signup')}
             >
               Join This Challenge
             </Button>
@@ -316,7 +312,7 @@ export function Community({ onNavigate }) {
             <Button 
               variant="outline" 
               className="rounded-full border-2 border-black px-10 py-7 text-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg"
-              onClick={() => alert('Extended stories page coming soon!')}
+              onClick={() => onNavigate('signup')}
             >
               Read More Stories
             </Button>
@@ -350,7 +346,7 @@ export function Community({ onNavigate }) {
             <div className="text-center">
               <Button 
                 className="rounded-full bg-black hover:bg-gray-800 px-10 py-7 text-xl shadow-xl hover:shadow-2xl transition-all"
-                onClick={() => alert('Login required. Vent space coming soon!')}
+                onClick={() => onNavigate('signup')}
               >
                 Enter Vent Space
               </Button>

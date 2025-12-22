@@ -5,7 +5,6 @@ import { Progress } from '../components/ui/progress';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
-import { TopNavBar } from '../components/TopNavBar';
 import { 
   CheckCircle2, 
   Circle, 
@@ -212,8 +211,6 @@ export function Dashboard({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="dashboard" onNavigate={onNavigate} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -504,7 +501,7 @@ export function Dashboard({ onNavigate }) {
                 {buddies.length > 0 ? (
                   buddies.slice(0, 3).map((buddy) => (
                     <div key={buddy._id} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-muted/50 rounded-lg">
-                      <div className="w-8 h-8 bg-gray-200 dark:bg-muted rounded-full flex items-center justify-center text-sm font-bold">
+                      <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-sm font-bold text-white">
                         {buddy.name?.charAt(0) || '?'}
                       </div>
                       <div className="flex-1 min-w-0">
