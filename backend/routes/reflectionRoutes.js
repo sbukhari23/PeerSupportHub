@@ -50,6 +50,62 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/reflections/stats/summary
+// @desc    Get reflection statistics (mood trends, entry counts)
+// @access  Private
+// NOTE: This route MUST be defined before /:id to avoid "stats" being treated as an ObjectId
+router.get('/stats/summary', protect, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get entries from last N days
+    const entries = await ReflectionEntry.find({
+      userId: req.user._id,
+      date: { $gte: startDate },
+    }).lean();
+
+    // Calculate stats
+    const stats = {
+      totalEntries: entries.length,
+      byType: {},
+      averageMood: 0,
+      moodTrend: [],
+      energyDistribution: { High: 0, Low: 0, Neutral: 0 },
+    };
+
+    // Count by type
+    entries.forEach((entry) => {
+      if (!stats.byType[entry.entryType]) {
+        stats.byType[entry.entryType] = 0;
+      }
+      stats.byType[entry.entryType]++;
+
+      // Mood calculation
+      if (entry.moodRating) {
+        stats.averageMood += entry.moodRating;
+      }
+
+      // Energy distribution
+      if (entry.energyState) {
+        stats.energyDistribution[entry.energyState]++;
+      }
+    });
+
+    // Calculate average mood
+    const moodEntries = entries.filter((e) => e.moodRating);
+    if (moodEntries.length > 0) {
+      stats.averageMood = (stats.averageMood / moodEntries.length).toFixed(2);
+    }
+
+    res.json(stats);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: 'Server Error' });
+  }
+});
+
 // @route   GET /api/reflections/:id
 // @desc    Get specific reflection entry
 // @access  Private
@@ -183,61 +239,6 @@ router.delete('/:id', protect, async (req, res) => {
     await reflection.deleteOne();
 
     res.json({ msg: 'Reflection entry deleted successfully' });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ msg: 'Server Error' });
-  }
-});
-
-// @route   GET /api/reflections/stats/summary
-// @desc    Get reflection statistics (mood trends, entry counts)
-// @access  Private
-router.get('/stats/summary', protect, async (req, res) => {
-  try {
-    const days = parseInt(req.query.days) || 30;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    // Get entries from last N days
-    const entries = await ReflectionEntry.find({
-      userId: req.user._id,
-      date: { $gte: startDate },
-    }).lean();
-
-    // Calculate stats
-    const stats = {
-      totalEntries: entries.length,
-      byType: {},
-      averageMood: 0,
-      moodTrend: [],
-      energyDistribution: { High: 0, Low: 0, Neutral: 0 },
-    };
-
-    // Count by type
-    entries.forEach((entry) => {
-      if (!stats.byType[entry.entryType]) {
-        stats.byType[entry.entryType] = 0;
-      }
-      stats.byType[entry.entryType]++;
-
-      // Mood calculation
-      if (entry.moodRating) {
-        stats.averageMood += entry.moodRating;
-      }
-
-      // Energy distribution
-      if (entry.energyState) {
-        stats.energyDistribution[entry.energyState]++;
-      }
-    });
-
-    // Calculate average mood
-    const moodEntries = entries.filter((e) => e.moodRating);
-    if (moodEntries.length > 0) {
-      stats.averageMood = (stats.averageMood / moodEntries.length).toFixed(2);
-    }
-
-    res.json(stats);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: 'Server Error' });

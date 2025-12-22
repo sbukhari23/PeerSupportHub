@@ -6,6 +6,46 @@ const DailyLog = require('../models/DailyLog');
 const BuddyRequest = require('../models/BuddyRequest');
 const { protect } = require('../middleware/authMiddleware');
 const { objectIdValidation, validate } = require('../middleware/validationMiddleware');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure storage for avatar uploads
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/avatars/';
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, 'avatar-' + req.user._id + '-' + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+// File filter - only allow images
+const avatarFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+  }
+};
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  fileFilter: avatarFilter,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit for avatars
+  },
+});
 
 // @route   GET /api/profile/me
 // @desc    Get current user's profile
@@ -52,6 +92,62 @@ router.put('/', protect, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error: unable to update profile');
+  }
+});
+
+// @route   POST /api/profile/avatar
+// @desc    Upload profile picture
+// @access  Private
+router.post('/avatar', protect, avatarUpload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ msg: 'No image file provided' });
+    }
+
+    // Get the file path
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    // Delete old avatar if exists
+    const user = await User.findById(req.user._id);
+    if (user.avatarUrl) {
+      const oldAvatarPath = path.join(__dirname, '..', user.avatarUrl);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Update user's avatarUrl
+    user.avatarUrl = avatarUrl;
+    await user.save();
+
+    res.json({ avatarUrl, msg: 'Avatar uploaded successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error: unable to upload avatar');
+  }
+});
+
+// @route   DELETE /api/profile/avatar
+// @desc    Remove profile picture
+// @access  Private
+router.delete('/avatar', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user.avatarUrl) {
+      const avatarPath = path.join(__dirname, '..', user.avatarUrl);
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath);
+      }
+    }
+
+    user.avatarUrl = null;
+    await user.save();
+
+    res.json({ msg: 'Avatar removed successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error: unable to remove avatar');
   }
 });
 
@@ -153,7 +249,7 @@ router.get('/search/users', protect, async (req, res) => {
     }
 
     const users = await User.find(searchQuery)
-      .select('name username currentProgressScore onboardingIntent')
+      .select('name username currentProgressScore onboardingIntent avatarUrl')
       .limit(parseInt(limit))
       .sort({ name: 1 });
 
@@ -176,6 +272,7 @@ router.get('/search/users', protect, async (req, res) => {
         username: user.username,
         currentProgressScore: user.currentProgressScore,
         onboardingIntent: user.onboardingIntent,
+        avatarUrl: user.avatarUrl,
         buddyStatus,
       };
     });
@@ -204,13 +301,30 @@ router.get('/buddy/requests', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/profile/buddy/sent-requests
+// @desc    Get all sent buddy requests (pending)
+// @access  Private
+router.get('/buddy/sent-requests', protect, async (req, res) => {
+  try {
+    const requests = await BuddyRequest.find({
+      sender: req.user._id,
+      status: 'Pending',
+    }).populate('recipient', 'name username currentProgressScore');
+
+    res.json(requests);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // @route   GET /api/profile/buddies
 // @desc    Get all current user's buddies
 // @access  Private
 router.get('/buddies', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
-      .populate('buddies', 'name username currentProgressScore onboardingIntent');
+      .populate('buddies', 'name username currentProgressScore onboardingIntent avatarUrl');
 
     res.json(user.buddies || []);
   } catch (err) {

@@ -87,8 +87,26 @@ router.post(
     const existing = await DailyLog.findOne({ userHabitId: habitId, logDate: today });
     if (existing) return res.status(400).json({ msg: 'A log already exists for this habit today' });
 
-    const now = new Date();
+    // Check rest day (Paused) limit - max 3 per month per habit
+    if (completionStatus === 'Paused') {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      const pausedThisMonth = await DailyLog.countDocuments({
+        userHabitId: habitId,
+        completionStatus: 'Paused',
+        logDate: { $gte: startOfMonth, $lte: endOfMonth },
+      });
+      
+      if (pausedThisMonth >= 3) {
+        return res.status(400).json({ 
+          msg: 'You have used all 3 rest days for this habit this month. Rest days reset at the start of each month.' 
+        });
+      }
+    }
+
     const progressScoreImpact = completionStatus === 'Completed' ? 1 : (completionStatus === 'Failed' ? -1 : 0);
+    const now = new Date();
 
     const dailyLog = new DailyLog({
       userHabitId: habitId,
@@ -104,7 +122,7 @@ router.post(
     // Update the UserHabit streak/compassionate pause
     if (completionStatus === 'Completed') {
       // Check for a completed or paused log yesterday to maintain streak
-      const yesterday = getStartOfDay(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+      const yesterday = getStartOfDay(new Date(today.getTime() - 24 * 60 * 60 * 1000));
       const yesterdayLog = await DailyLog.findOne({ 
         userHabitId: habitId, 
         logDate: yesterday, 

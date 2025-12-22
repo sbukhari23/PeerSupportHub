@@ -536,7 +536,7 @@ router.put('/mentor-applications/:id/reject', async (req, res) => {
     // If user was a mentor, revert to regular user
     const user = await User.findById(mentorProfile.userId);
     if (user && user.userType === 'Mentor') {
-      user.userType = 'Regular';
+      user.userType = 'User';
       await user.save();
     }
 

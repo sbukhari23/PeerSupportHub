@@ -116,19 +116,72 @@ router.put(
         if (name !== undefined) template.name = name;
         if (description !== undefined) template.description = description;
         if (category !== undefined) template.category = category;
-        await template.save();
+        try {
+          await template.save();
+        } catch (saveErr) {
+          if (saveErr.code === 11000) {
+            return res.status(400).json({ msg: 'A habit with this name already exists' });
+          }
+          throw saveErr;
+        }
       } else {
-        // Template is public or not owned by user - create a new private template
-        const newTemplate = new HabitTemplate({
-          name: name || template.name,
-          category: category || template.category,
-          description: description || template.description,
+        // Template is public or not owned by user - need to use/create a private template
+        const targetName = name || template.name;
+        
+        // Check if user already has a private template with this name
+        let existingPrivateTemplate = await HabitTemplate.findOne({
           creatorId: req.user._id,
+          name: targetName,
           isPublic: false
         });
         
-        const savedTemplate = await newTemplate.save();
-        userHabit.templateId = savedTemplate._id;
+        if (existingPrivateTemplate) {
+          // Update the existing private template
+          if (description !== undefined) existingPrivateTemplate.description = description;
+          if (category !== undefined) existingPrivateTemplate.category = category;
+          try {
+            await existingPrivateTemplate.save();
+          } catch (saveErr) {
+            if (saveErr.code === 11000) {
+              return res.status(400).json({ msg: 'A habit with this name already exists' });
+            }
+            throw saveErr;
+          }
+          userHabit.templateId = existingPrivateTemplate._id;
+        } else {
+          // Create a new private template with unique name if needed
+          let newTemplateName = targetName;
+          let suffix = 1;
+          let saveSuccess = false;
+          
+          while (!saveSuccess && suffix <= 10) {
+            try {
+              const newTemplate = new HabitTemplate({
+                name: newTemplateName,
+                category: category || template.category,
+                description: description || template.description,
+                creatorId: req.user._id,
+                isPublic: false
+              });
+              
+              const savedTemplate = await newTemplate.save();
+              userHabit.templateId = savedTemplate._id;
+              saveSuccess = true;
+            } catch (saveErr) {
+              if (saveErr.code === 11000) {
+                // Duplicate key error - try with a suffix
+                suffix++;
+                newTemplateName = `${targetName} (${suffix})`;
+              } else {
+                throw saveErr;
+              }
+            }
+          }
+          
+          if (!saveSuccess) {
+            return res.status(400).json({ msg: 'Unable to create habit with this name. Please try a different name.' });
+          }
+        }
       }
     }
 

@@ -99,6 +99,14 @@ const userSchema = mongoose.Schema(
         ref: 'Group', 
       },
     ],
+    avatarUrl: {
+      type: String,
+      default: null,
+    },
+    bio: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
