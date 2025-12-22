@@ -24,6 +24,7 @@ router.post('/', createLimiter, protect, groupValidation, validate, async (req, 
       type: type || 'FocusedSpace', // Default type
       topicFocus,
       members: [req.user._id],
+      memberJoinDates: [{ memberId: req.user._id, joinedAt: new Date() }],
       moderators: [req.user._id], // Creator becomes moderator
     });
 
@@ -124,8 +125,9 @@ router.post(
       return res.status(400).json({ msg: 'You are already a member of this group' });
     }
 
-    // Add user to group members
+    // Add user to group members with join date
     group.members.push(req.user._id);
+    group.memberJoinDates.push({ memberId: req.user._id, joinedAt: new Date() });
     await group.save();
 
     // Add group to user's pods array
@@ -167,6 +169,11 @@ router.delete(
     // Remove user from members
     group.members = group.members.filter(
       (member) => member.toString() !== req.user._id.toString()
+    );
+
+    // Remove user from memberJoinDates
+    group.memberJoinDates = group.memberJoinDates.filter(
+      (m) => m.memberId.toString() !== req.user._id.toString()
     );
 
     // If user was a moderator, remove them from moderators too
