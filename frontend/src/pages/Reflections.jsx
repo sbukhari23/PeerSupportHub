@@ -153,7 +153,7 @@ export function Reflections({ onNavigate }) {
   };
 
   const filteredReflections = reflections.filter(r => 
-    activeFilter === 'all' || r.type === activeFilter
+    activeFilter === 'all' || r.type === activeFilter || r.entryType === activeFilter
   );
 
   const formatDate = (dateString) => {
@@ -270,7 +270,7 @@ export function Reflections({ onNavigate }) {
                         <span className={mood.color}>{mood.icon}</span>
                       </div>
                       <div>
-                        <p className="font-medium">{reflection.type} Reflection</p>
+                        <p className="font-medium">{reflection.type || reflection.entryType} Reflection</p>
                         <p className="text-sm text-gray-500">{formatDate(reflection.createdAt)}</p>
                       </div>
                     </div>

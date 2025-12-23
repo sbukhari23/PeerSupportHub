@@ -336,11 +336,11 @@ export function AdminPanel({ onNavigate }) {
               <Card className="p-6 border-2 border-gray-200 rounded-2xl">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-green-600" />
+                    <Target className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{stats?.activeUsers || 0}</p>
-                    <p className="text-gray-500 text-sm">Active Today</p>
+                    <p className="text-2xl font-bold">{stats?.totalHabits || 0}</p>
+                    <p className="text-gray-500 text-sm">Total Habits</p>
                   </div>
                 </div>
               </Card>
@@ -351,8 +351,8 @@ export function AdminPanel({ onNavigate }) {
                     <TrendingUp className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{stats?.newUsersToday || 0}</p>
-                    <p className="text-gray-500 text-sm">New Today</p>
+                    <p className="text-2xl font-bold">{stats?.newUsersThisWeek || 0}</p>
+                    <p className="text-gray-500 text-sm">New This Week</p>
                   </div>
                 </div>
               </Card>
@@ -371,23 +371,13 @@ export function AdminPanel({ onNavigate }) {
             </div>
 
             {/* Additional Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="p-6 border-2 border-gray-200 rounded-2xl">
                 <div className="flex items-center gap-4">
                   <Calendar className="w-6 h-6 text-gray-400" />
                   <div>
                     <p className="text-xl font-bold">{stats?.totalGroups || 0}</p>
                     <p className="text-gray-500 text-sm">Total Groups</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 border-2 border-gray-200 rounded-2xl">
-                <div className="flex items-center gap-4">
-                  <CheckCircle className="w-6 h-6 text-gray-400" />
-                  <div>
-                    <p className="text-xl font-bold">{stats?.totalHabits || 0}</p>
-                    <p className="text-gray-500 text-sm">Total Habits</p>
                   </div>
                 </div>
               </Card>
