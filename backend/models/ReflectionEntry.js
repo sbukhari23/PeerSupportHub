@@ -29,6 +29,17 @@ const reflectionEntrySchema = mongoose.Schema(
       type: String,
       enum: ['High', 'Low', 'Neutral'],
     },
+    gratitude: {
+      type: String,
+    },
+    goals: {
+      type: String,
+    },
+    // Store original type from frontend for filtering
+    type: {
+      type: String,
+      enum: ['Daily', 'Weekly', 'Gratitude', 'Goals', 'Freeform'],
+    },
   },
   {
     timestamps: true,

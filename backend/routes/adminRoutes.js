@@ -6,6 +6,7 @@ const Message = require('../models/Message');
 const FeedbackMirror = require('../models/FeedbackMirror');
 const MentorProfile = require('../models/MentorProfile');
 const HabitTemplate = require('../models/HabitTemplate');
+const UserHabit = require('../models/UserHabit');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
 const { sendMentorApprovedNotification, sendMentorRejectedNotification } = require('../utils/notificationService');
@@ -22,16 +23,14 @@ router.get('/stats', async (req, res) => {
       totalUsers,
       totalGroups,
       totalMessages,
-      activeUsersToday,
+      totalHabits,
       flaggedContent,
       newUsersThisWeek,
     ] = await Promise.all([
       User.countDocuments(),
       Group.countDocuments(),
       Message.countDocuments(),
-      User.countDocuments({
-        lastActiveAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      }),
+      UserHabit.countDocuments(),
       FeedbackMirror.countDocuments({ flaggedForModeration: true }),
       User.countDocuments({
         createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
@@ -42,7 +41,7 @@ router.get('/stats', async (req, res) => {
       totalUsers,
       totalGroups,
       totalMessages,
-      activeUsersToday,
+      totalHabits,
       flaggedContent,
       newUsersThisWeek,
     });
