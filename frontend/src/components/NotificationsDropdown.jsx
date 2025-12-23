@@ -68,6 +68,7 @@ export function NotificationsDropdown({ onNavigate }) {
 
   const handleOpen = () => {
     setIsOpen(true);
+    setUnreadCount(0); // Clear badge immediately when opening
     fetchNotifications();
   };
 

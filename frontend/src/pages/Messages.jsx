@@ -153,44 +153,13 @@ export function Messages({ userId, onNavigate }) {
     if (window._pendingDMReactions?.[reactionKey]) return;
     window._pendingDMReactions = { ...window._pendingDMReactions, [reactionKey]: true };
     
-    // Optimistic update (one reaction per user)
-    setMessages(prev => prev.map(msg => {
-      if (msg._id === messageId) {
-        const getUserId = (r) => r.userId?._id || r.userId;
-        const existingReactionIndex = msg.reactions?.findIndex(
-          r => getUserId(r)?.toString() === userData._id?.toString() && r.emoji === emoji
-        );
-        const userHasAnyReactionIndex = msg.reactions?.findIndex(
-          r => getUserId(r)?.toString() === userData._id?.toString()
-        );
-        
-        if (existingReactionIndex !== -1 && existingReactionIndex !== undefined) {
-          // Remove reaction (toggle off)
-          return {
-            ...msg,
-            reactions: msg.reactions.filter((_, i) => i !== existingReactionIndex)
-          };
-        } else if (userHasAnyReactionIndex !== -1 && userHasAnyReactionIndex !== undefined) {
-          // Replace existing reaction with new one
-          const newReactions = [...msg.reactions];
-          newReactions[userHasAnyReactionIndex] = { userId: userData._id, emoji };
-          return { ...msg, reactions: newReactions };
-        } else {
-          // Add new reaction
-          return {
-            ...msg,
-            reactions: [...(msg.reactions || []), { userId: userData._id, emoji }]
-          };
-        }
-      }
-      return msg;
-    }));
-    
     try {
+      // Wait for backend to process before updating UI
       await messagesAPI.reactToDirectMessage(messageId, emoji);
+      // Fetch updated messages to show the confirmed reaction
+      await loadConversation(activeConversation, false);
     } catch {
       toast.error('Failed to add reaction');
-      loadConversation(activeConversation, true);
     } finally {
       setTimeout(() => {
         delete window._pendingDMReactions?.[reactionKey];

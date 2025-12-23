@@ -37,6 +37,7 @@ export function HabitManager({ onNavigate }) {
   const [showLogModal, setShowLogModal] = useState(null);
   const [logNote, setLogNote] = useState('');
   const [deleteHabitId, setDeleteHabitId] = useState(null);
+  const [todayLoggedHabits, setTodayLoggedHabits] = useState([]); // Track habits already logged today
   
   const [newHabit, setNewHabit] = useState({
     name: '',
@@ -69,14 +70,21 @@ export function HabitManager({ onNavigate }) {
 
   const fetchData = async () => {
     try {
-      const [habitsData, statsData, templatesData] = await Promise.all([
+      const [habitsData, statsData, templatesData, todayLogsData] = await Promise.all([
         habitsAPI.getHabits().catch(() => []),
         profileAPI.getStats().catch(() => null),
         habitsAPI.getPublicTemplates().catch(() => []),
+        habitLogsAPI.getTodayLogs().catch(() => []),
       ]);
       setHabits(habitsData);
       setStats(statsData);
       setPublicTemplates(templatesData);
+      
+      // Extract habit IDs that have been logged today (Completed or Paused)
+      const loggedHabitIds = todayLogsData
+        .filter(log => log.completionStatus === 'Completed' || log.completionStatus === 'Paused')
+        .map(log => log.userHabitId);
+      setTodayLoggedHabits(loggedHabitIds);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -346,10 +354,11 @@ export function HabitManager({ onNavigate }) {
                           <div className="flex items-center gap-2">
                             <Button
                               onClick={() => setShowLogModal(habit)}
-                              className="rounded-full bg-green-600 hover:bg-green-700"
+                              disabled={todayLoggedHabits.includes(habit._id)}
+                              className={`rounded-full ${todayLoggedHabits.includes(habit._id) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                             >
                               <CheckCircle2 className="w-4 h-4 mr-2" />
-                              Mark Done
+                              {todayLoggedHabits.includes(habit._id) ? 'Done Today' : 'Mark Done'}
                             </Button>
                             <Button
                               variant="outline"
@@ -428,10 +437,11 @@ export function HabitManager({ onNavigate }) {
                           <div className="flex items-center gap-2">
                             <Button
                               onClick={() => setShowLogModal(habit)}
-                              className="rounded-full bg-green-600 hover:bg-green-700"
+                              disabled={todayLoggedHabits.includes(habit._id)}
+                              className={`rounded-full ${todayLoggedHabits.includes(habit._id) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                             >
                               <CheckCircle2 className="w-4 h-4 mr-2" />
-                              Mark Done
+                              {todayLoggedHabits.includes(habit._id) ? 'Done Today' : 'Mark Done'}
                             </Button>
                             <Button
                               variant="outline"

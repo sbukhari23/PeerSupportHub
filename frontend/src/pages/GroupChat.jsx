@@ -197,48 +197,13 @@ export function GroupChat({ groupId, onNavigate }) {
     if (window._pendingReactions?.[reactionKey]) return;
     window._pendingReactions = { ...window._pendingReactions, [reactionKey]: true };
     
-    // Optimistic update - immediately show the reaction (one reaction per user)
-    setMessages(prev => prev.map(msg => {
-      if (msg._id === messageId) {
-        // Handle both populated userId objects and plain string IDs
-        const getUserId = (r) => r.userId?._id || r.userId;
-        const existingReactionIndex = msg.reactions?.findIndex(
-          r => getUserId(r)?.toString() === userData._id?.toString() && r.emoji === emoji
-        );
-        const userHasAnyReactionIndex = msg.reactions?.findIndex(
-          r => getUserId(r)?.toString() === userData._id?.toString()
-        );
-        
-        if (existingReactionIndex !== -1 && existingReactionIndex !== undefined) {
-          // Remove reaction (toggle off)
-          return {
-            ...msg,
-            reactions: msg.reactions.filter((_, i) => i !== existingReactionIndex)
-          };
-        } else if (userHasAnyReactionIndex !== -1 && userHasAnyReactionIndex !== undefined) {
-          // Replace existing reaction with new one
-          const newReactions = [...msg.reactions];
-          newReactions[userHasAnyReactionIndex] = { userId: userData._id, emoji };
-          return { ...msg, reactions: newReactions };
-        } else {
-          // Add new reaction
-          return {
-            ...msg,
-            reactions: [...(msg.reactions || []), { userId: userData._id, emoji }]
-          };
-        }
-      }
-      return msg;
-    }));
-    
     try {
+      // Wait for backend to process before updating UI
       await messagesAPI.reactToMessage(messageId, emoji);
-      // Don't refetch immediately - let the optimistic update stand
-      // The next poll cycle will sync with server
+      // Fetch updated messages to show the confirmed reaction
+      await fetchGroupAndMessages();
     } catch {
       toast.error('Failed to add reaction');
-      // Revert on error by refetching
-      fetchGroupAndMessages();
     } finally {
       // Allow future reactions after a short delay
       setTimeout(() => {

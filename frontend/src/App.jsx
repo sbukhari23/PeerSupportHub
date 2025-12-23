@@ -35,28 +35,28 @@ const protectedPages = ['dashboard', 'groups', 'buddies', 'messages', 'habits', 
 const publicOnlyPages = ['home', 'how-it-works', 'membership', 'community', 'login', 'signup', 'forgot-password'];
 
 export default function App() {
-  // Get initial page from URL hash or default based on auth status
+  // Get initial page from URL pathname or default based on auth status
   const getInitialPage = () => {
-    const hash = window.location.hash.slice(1); // Remove the '#'
+    const pathname = window.location.pathname.slice(1) || ''; // Remove the leading '/'
     const isAuthenticated = authAPI.isAuthenticated();
     
-    if (hash) {
+    if (pathname) {
       // Check if it's a protected page and user is not authenticated
-      const basePage = hash.split('-')[0]; // Handle group-chat-{id}, messages-{id}
+      const basePage = pathname.split('-')[0]; // Handle group-chat-{id}, messages-{id}
       const isProtected = protectedPages.includes(basePage) || 
-                          hash.startsWith('group-chat-') || 
-                          hash.startsWith('messages-');
+                          pathname.startsWith('group-chat-') || 
+                          pathname.startsWith('messages-');
       
       if (isProtected && !isAuthenticated) {
         return 'login';
       }
       
       // If authenticated and trying to access public-only pages, redirect to dashboard
-      if (isAuthenticated && publicOnlyPages.includes(hash)) {
+      if (isAuthenticated && publicOnlyPages.includes(pathname)) {
         return 'dashboard';
       }
       
-      return hash;
+      return pathname;
     }
     
     // Default: if authenticated go to dashboard, else home
@@ -77,25 +77,26 @@ export default function App() {
 
   // Custom navigation function that also updates the URL
   const navigate = useCallback((page) => {
+    const targetPath = `/${page}`;
     // Avoid unnecessary updates if already on this page
-    if (page === window.location.hash.slice(1)) {
+    if (targetPath === window.location.pathname) {
       return;
     }
     setCurrentPage(page);
-    window.location.hash = page;
+    window.history.pushState(null, '', targetPath);
   }, []);
 
   // Listen for browser back/forward navigation
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1) || 'home';
+    const handlePopState = () => {
+      const pathname = window.location.pathname.slice(1) || 'home';
       const isAuthenticated = authAPI.isAuthenticated();
       
       // Check if it's a protected page and user is not authenticated
-      const basePage = hash.split('-')[0];
+      const basePage = pathname.split('-')[0];
       const isProtected = protectedPages.includes(basePage) || 
-                          hash.startsWith('group-chat-') || 
-                          hash.startsWith('messages-');
+                          pathname.startsWith('group-chat-') || 
+                          pathname.startsWith('messages-');
       
       if (isProtected && !isAuthenticated) {
         navigate('login');
@@ -103,23 +104,23 @@ export default function App() {
       }
       
       // If authenticated and trying to access public-only pages, redirect to dashboard
-      if (isAuthenticated && publicOnlyPages.includes(hash)) {
+      if (isAuthenticated && publicOnlyPages.includes(pathname)) {
         navigate('dashboard');
         return;
       }
       
       // Only update if the page actually changed
-      setCurrentPage(prev => prev === hash ? prev : hash);
+      setCurrentPage(prev => prev === pathname ? prev : pathname);
     };
 
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handlePopState);
     
-    // Set initial hash if not present
-    if (!window.location.hash) {
-      window.location.hash = currentPage;
+    // Set initial path if on root
+    if (window.location.pathname === '/') {
+      window.history.replaceState(null, '', `/${currentPage}`);
     }
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [currentPage, navigate]);
 
   const renderPage = () => {
