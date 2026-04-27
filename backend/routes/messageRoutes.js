@@ -17,7 +17,7 @@ const checkGroupMembership = async (userId, groupId) => {
   if (!isMember) {
     throw new Error('You are not a member of this group');
   }
-  return group;
+  return group; // Return the group for further use (e.g., join date filtering)
 };
 
 // Helper function to check if user is moderator
@@ -77,7 +77,7 @@ router.post('/:groupId', protect, upload.array('images', 5), async (req, res) =>
     const otherMembers = group.members.filter(memberId => memberId.toString() !== req.user._id.toString());
     for (const memberId of otherMembers) {
       try {
-        await sendGroupMessageNotification(io, memberId.toString(), group.name, senderName, messagePreview);
+        await sendGroupMessageNotification(io, memberId.toString(), group.name, senderName, messagePreview, groupId);
       } catch (notifError) {
         console.error('Failed to send notification:', notifError);
       }
@@ -97,11 +97,15 @@ router.get('/:groupId', protect, async (req, res) => {
     const groupId = req.params.groupId;
     const { page = 1, limit = 50 } = req.query;
 
-    // Check group membership
-    await checkGroupMembership(req.user._id, groupId);
+    // Check group membership and get member join date
+    const group = await checkGroupMembership(req.user._id, groupId);
+    const memberJoinDate = group.getMemberJoinDate(req.user._id);
 
-    // Get messages with pagination
-    const messages = await Message.find({ groupId })
+    // Get messages with pagination - only messages sent after user joined
+    const messages = await Message.find({ 
+      groupId,
+      createdAt: { $gte: memberJoinDate }
+    })
       .populate('senderId', 'name username')
       .populate('reactions.userId', 'name username')
       .sort({ createdAt: -1 })
@@ -121,7 +125,10 @@ router.get('/:groupId', protect, async (req, res) => {
       return msgObj;
     });
 
-    const count = await Message.countDocuments({ groupId });
+    const count = await Message.countDocuments({ 
+      groupId,
+      createdAt: { $gte: memberJoinDate }
+    });
 
     res.json({
       messages: processedMessages,
@@ -233,17 +240,26 @@ router.post('/:messageId/react', protect, async (req, res) => {
     await checkGroupMembership(req.user._id, message.groupId);
 
     // Check if user already reacted with this emoji
-    const existingReaction = message.reactions.find(
+    const existingReactionIndex = message.reactions.findIndex(
       (r) => r.userId.toString() === req.user._id.toString() && r.emoji === emoji
     );
 
-    if (existingReaction) {
-      // Remove reaction (toggle)
-      message.reactions = message.reactions.filter(
-        (r) => !(r.userId.toString() === req.user._id.toString() && r.emoji === emoji)
-      );
+    // Check if user already has ANY reaction on this message
+    const userHasAnyReaction = message.reactions.findIndex(
+      (r) => r.userId.toString() === req.user._id.toString()
+    );
+
+    if (existingReactionIndex !== -1) {
+      // Remove reaction (toggle off)
+      message.reactions.splice(existingReactionIndex, 1);
+    } else if (userHasAnyReaction !== -1) {
+      // User already has a different reaction - replace it with the new one
+      message.reactions[userHasAnyReaction] = {
+        userId: req.user._id,
+        emoji: emoji.trim(),
+      };
     } else {
-      // Add reaction
+      // Add new reaction
       message.reactions.push({
         userId: req.user._id,
         emoji: emoji.trim(),
@@ -329,7 +345,7 @@ router.post('/direct/:userId', protect, upload.array('images', 5), async (req, r
     const io = req.app.get('io');
     const messagePreview = content.length > 50 ? content.substring(0, 50) + '...' : content;
     try {
-      await sendMessageNotification(io, recipientId, req.user.name, messagePreview);
+      await sendMessageNotification(io, recipientId, req.user.name, messagePreview, req.user._id.toString());
     } catch (notifError) {
       console.error('Failed to send DM notification:', notifError);
     }
@@ -492,6 +508,104 @@ router.delete('/direct/:messageId', protect, async (req, res) => {
     await message.deleteOne();
 
     res.json({ message: 'Direct message deleted successfully' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/messages/direct/:messageId/react
+// @desc    Add emoji reaction to direct message
+// @access  Private
+router.post('/direct/:messageId/react', protect, async (req, res) => {
+  try {
+    const { emoji } = req.body;
+    const message = await Message.findById(req.params.messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Ensure it's a direct message
+    if (!message.recipientId) {
+      return res.status(400).json({ message: 'This is not a direct message' });
+    }
+
+    // Validate emoji
+    if (!emoji || emoji.trim().length === 0) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    // Check if user is part of this conversation
+    const isSender = message.senderId.toString() === req.user._id.toString();
+    const isRecipient = message.recipientId.toString() === req.user._id.toString();
+    if (!isSender && !isRecipient) {
+      return res.status(403).json({ message: 'You are not part of this conversation' });
+    }
+
+    // Check if user already reacted with this emoji
+    const existingReactionIndex = message.reactions.findIndex(
+      (r) => r.userId.toString() === req.user._id.toString() && r.emoji === emoji
+    );
+
+    // Check if user already has ANY reaction on this message
+    const userHasAnyReaction = message.reactions.findIndex(
+      (r) => r.userId.toString() === req.user._id.toString()
+    );
+
+    if (existingReactionIndex !== -1) {
+      // Remove reaction (toggle off)
+      message.reactions.splice(existingReactionIndex, 1);
+    } else if (userHasAnyReaction !== -1) {
+      // User already has a different reaction - replace it with the new one
+      message.reactions[userHasAnyReaction] = {
+        userId: req.user._id,
+        emoji: emoji.trim(),
+      };
+    } else {
+      // Add new reaction
+      message.reactions.push({
+        userId: req.user._id,
+        emoji: emoji.trim(),
+      });
+    }
+
+    await message.save();
+    await message.populate('reactions.userId', 'name username');
+
+    res.json(message);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/messages/direct/:messageId/flag
+// @desc    Flag direct message for moderation
+// @access  Private
+router.post('/direct/:messageId/flag', protect, async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Ensure it's a direct message
+    if (!message.recipientId) {
+      return res.status(400).json({ message: 'This is not a direct message' });
+    }
+
+    // Check if user is part of this conversation
+    const isSender = message.senderId.toString() === req.user._id.toString();
+    const isRecipient = message.recipientId.toString() === req.user._id.toString();
+    if (!isSender && !isRecipient) {
+      return res.status(403).json({ message: 'You are not part of this conversation' });
+    }
+
+    // Flag message
+    message.flaggedForModeration = true;
+    await message.save();
+
+    res.json({ message: 'Message flagged for moderation' });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

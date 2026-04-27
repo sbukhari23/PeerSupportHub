@@ -42,7 +42,7 @@ const sendHabitReminder = async (io, userId, habitData) => {
     type: 'habit_reminder',
     title: '⏰ Habit Reminder',
     message: `Time to complete your habit: ${habitData.title}`,
-    link: `/dashboard/habits/${habitData._id}`,
+    link: `habits`,
     icon: '⏰',
     data: { habitId: habitData._id },
   });
@@ -56,7 +56,7 @@ const sendBuddyRequestNotification = async (io, recipientId, requesterId, reques
     type: 'buddy_request',
     title: '🤝 New Buddy Request',
     message: `${requesterName} wants to be your accountability buddy`,
-    link: `/profile/buddy-requests`,
+    link: `buddies`,
     icon: '🤝',
     data: { requesterId },
   });
@@ -70,7 +70,7 @@ const sendBuddyAcceptedNotification = async (io, userId, accepterName) => {
     type: 'buddy_accepted',
     title: '✅ Buddy Request Accepted',
     message: `${accepterName} accepted your buddy request!`,
-    link: `/profile/buddy`,
+    link: `buddies`,
     icon: '✅',
   });
 };
@@ -78,12 +78,13 @@ const sendBuddyAcceptedNotification = async (io, userId, accepterName) => {
 /**
  * Send new message notification
  */
-const sendMessageNotification = async (io, recipientId, senderName, messagePreview) => {
+const sendMessageNotification = async (io, recipientId, senderName, messagePreview, senderId = null) => {
   return await createNotification(io, recipientId, {
     type: 'message',
     title: `💬 New Message from ${senderName}`,
     message: messagePreview,
-    link: `/messages`,
+    link: senderId ? `messages-${senderId}` : '/messages',
+    relatedId: senderId,
     icon: '💬',
   });
 };
@@ -91,12 +92,13 @@ const sendMessageNotification = async (io, recipientId, senderName, messagePrevi
 /**
  * Send group message notification
  */
-const sendGroupMessageNotification = async (io, userId, groupName, senderName, messagePreview) => {
+const sendGroupMessageNotification = async (io, userId, groupName, senderName, messagePreview, groupId = null) => {
   return await createNotification(io, userId, {
     type: 'group_message',
     title: `💬 New Message in ${groupName}`,
     message: `${senderName}: ${messagePreview}`,
-    link: `/groups/${groupName}`,
+    link: groupId ? `group-chat-${groupId}` : '/groups',
+    relatedId: groupId,
     icon: '💬',
   });
 };
