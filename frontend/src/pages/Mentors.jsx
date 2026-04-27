@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, mentorsAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 // Helper to ensure URL has proper protocol
 const ensureHttps = (url) => {
@@ -233,21 +232,19 @@ export function Mentors({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="mentors" onNavigate={onNavigate} />
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 hover:text-gray-900">
+              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <ArrowLeft className="w-6 h-6" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold">Mentorship</h1>
-                <p className="text-sm text-gray-500">Connect with experienced mentors</p>
+                <h1 className="text-2xl font-bold text-foreground">Mentorship</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Connect with experienced mentors</p>
               </div>
             </div>
             <Award className="w-8 h-8 text-yellow-500" />
@@ -268,8 +265,8 @@ export function Mentors({ onNavigate }) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-black text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 dark:bg-card dark:text-muted-foreground dark:hover:bg-muted dark:border-border'
               }`}
             >
               {tab.icon}
@@ -283,22 +280,22 @@ export function Mentors({ onNavigate }) {
           <>
             {/* Search */}
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <Input
                 type="text"
                 placeholder="Search mentors by name or expertise..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 py-3 rounded-full"
+                className="pl-12 py-3 rounded-full dark:bg-input dark:text-foreground dark:border-input"
               />
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredMentors.length > 0 ? (
                 filteredMentors.map((mentor) => (
-                  <Card key={mentor._id} className="p-6 hover:shadow-lg transition-shadow">
+                  <Card key={mentor._id} className="p-6 hover:shadow-lg transition-shadow dark:bg-card dark:border-border dark:text-card-foreground">
                     <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                      <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center text-white text-xl font-bold">
                         {mentor.userId?.name?.charAt(0) || 'M'}
                       </div>
                       <div className="flex-1">
@@ -630,7 +627,7 @@ export function Mentors({ onNavigate }) {
             </div>
 
             <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-bold">
                 {selectedMentor.userId?.name?.charAt(0) || 'M'}
               </div>
               <div>

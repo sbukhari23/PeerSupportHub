@@ -197,44 +197,18 @@ export function GroupChat({ groupId, onNavigate }) {
     if (window._pendingReactions?.[reactionKey]) return;
     window._pendingReactions = { ...window._pendingReactions, [reactionKey]: true };
     
-    // Optimistic update - immediately show the reaction
-    setMessages(prev => prev.map(msg => {
-      if (msg._id === messageId) {
-        // Handle both populated userId objects and plain string IDs
-        const getUserId = (r) => r.userId?._id || r.userId;
-        const existingReaction = msg.reactions?.find(
-          r => getUserId(r)?.toString() === userData._id?.toString() && r.emoji === emoji
-        );
-        if (existingReaction) {
-          // Remove reaction
-          return {
-            ...msg,
-            reactions: msg.reactions.filter(
-              r => !(getUserId(r)?.toString() === userData._id?.toString() && r.emoji === emoji)
-            )
-          };
-        } else {
-          // Add reaction
-          return {
-            ...msg,
-            reactions: [...(msg.reactions || []), { userId: userData._id, emoji }]
-          };
-        }
-      }
-      return msg;
-    }));
-    
     try {
+      // Wait for backend to process before updating UI
       await messagesAPI.reactToMessage(messageId, emoji);
-      // Fetch to sync with server (in background)
-      fetchGroupAndMessages();
+      // Fetch updated messages to show the confirmed reaction
+      await fetchGroupAndMessages();
     } catch {
       toast.error('Failed to add reaction');
-      // Revert on error
-      fetchGroupAndMessages();
     } finally {
-      // Allow future reactions
-      delete window._pendingReactions?.[reactionKey];
+      // Allow future reactions after a short delay
+      setTimeout(() => {
+        delete window._pendingReactions?.[reactionKey];
+      }, 500);
     }
   };
 
@@ -375,8 +349,8 @@ export function GroupChat({ groupId, onNavigate }) {
                       isActive ? 'bg-gray-100' : ''
                     }`}
                   >
-                    <div className="w-12 h-12 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shrink-0">
-                      <Users className="w-6 h-6 text-gray-500" />
+                    <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center shrink-0">
+                      <Users className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
@@ -423,8 +397,8 @@ export function GroupChat({ groupId, onNavigate }) {
               {/* Chat Header */}
               <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-500" />
+                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h2 className="font-bold text-gray-900">{group?.name}</h2>
@@ -467,7 +441,7 @@ export function GroupChat({ groupId, onNavigate }) {
                             <div className={`max-w-[75%] ${isOwn ? 'order-1' : ''}`}>
                               <div className="flex items-end gap-2">
                                 {!isOwn && (
-                                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+                                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white">
                                     {message.senderId?.name?.charAt(0) || 'A'}
                                   </div>
                                 )}
@@ -677,7 +651,7 @@ export function GroupChat({ groupId, onNavigate }) {
             <div className="space-y-3">
               {group?.members?.map((member) => (
                 <div key={member._id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center font-bold text-white">
                     {member.name?.charAt(0) || '?'}
                   </div>
                   <div className="flex-1">

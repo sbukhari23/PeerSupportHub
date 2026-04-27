@@ -11,7 +11,6 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { adminAPI, authAPI, setLogoutCallback } from '../services/api';
 import { toast } from 'sonner';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function AdminPanel({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -105,7 +104,11 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.banUser(userId);
       toast.success('User banned successfully');
-      fetchAdminData();
+      // Update state locally instead of reloading
+      setUsers(prev => prev.map(u => u._id === userId ? { ...u, isBanned: true } : u));
+      if (selectedUser?._id === userId) {
+        setSelectedUser(prev => ({ ...prev, isBanned: true }));
+      }
     } catch (error) {
       console.error('Error banning user:', error);
       toast.error('Failed to ban user');
@@ -116,7 +119,11 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.unbanUser(userId);
       toast.success('User unbanned successfully');
-      fetchAdminData();
+      // Update state locally instead of reloading
+      setUsers(prev => prev.map(u => u._id === userId ? { ...u, isBanned: false } : u));
+      if (selectedUser?._id === userId) {
+        setSelectedUser(prev => ({ ...prev, isBanned: false }));
+      }
     } catch (error) {
       console.error('Error unbanning user:', error);
       toast.error('Failed to unban user');
@@ -127,7 +134,8 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.deleteContent(contentId, contentType);
       toast.success('Content deleted successfully');
-      fetchAdminData();
+      // Remove from flagged content list locally
+      setFlaggedContent(prev => prev.filter(c => c._id !== contentId));
     } catch (error) {
       console.error('Error deleting content:', error);
       toast.error('Failed to delete content');
@@ -138,7 +146,8 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.resolveContent(contentId, contentType);
       toast.success('Content resolved successfully');
-      fetchAdminData();
+      // Remove from flagged content list locally
+      setFlaggedContent(prev => prev.filter(c => c._id !== contentId));
     } catch (error) {
       console.error('Error resolving content:', error);
       toast.error('Failed to resolve content');
@@ -149,7 +158,8 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.resolveReport(reportId);
       toast.success('Report resolved');
-      fetchAdminData();
+      // Remove from reports list locally
+      setReports(prev => prev.filter(r => r._id !== reportId));
     } catch (error) {
       console.error('Error resolving report:', error);
       toast.error('Failed to resolve report');
@@ -165,7 +175,9 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.approveMentorApplication(applicationId);
       toast.success('Mentor application approved!');
-      fetchAdminData();
+      // Remove from applications list and update count
+      setMentorApplications(prev => prev.filter(a => a._id !== applicationId));
+      setPendingMentorCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error approving mentor:', error);
       toast.error('Failed to approve mentor application');
@@ -178,9 +190,11 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.rejectMentorApplication(showRejectModal, rejectionReason);
       toast.success('Mentor application rejected');
+      // Remove from applications list and update count
+      setMentorApplications(prev => prev.filter(a => a._id !== showRejectModal));
+      setPendingMentorCount(prev => Math.max(0, prev - 1));
       setShowRejectModal(null);
       setRejectionReason('');
-      fetchAdminData();
     } catch (error) {
       console.error('Error rejecting mentor:', error);
       toast.error('Failed to reject mentor application');
@@ -191,7 +205,9 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.approveHabitTemplate(templateId);
       toast.success('Template approved and made public!');
-      fetchAdminData();
+      // Update template status locally
+      setHabitTemplates(prev => prev.map(t => t._id === templateId ? { ...t, isPublic: true } : t));
+      setPendingTemplatesCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error approving template:', error);
       toast.error('Failed to approve template');
@@ -202,7 +218,9 @@ export function AdminPanel({ onNavigate }) {
     try {
       await adminAPI.revokeHabitTemplate(templateId);
       toast.success('Template public status revoked');
-      fetchAdminData();
+      // Update template status locally
+      setHabitTemplates(prev => prev.map(t => t._id === templateId ? { ...t, isPublic: false } : t));
+      setPendingTemplatesCount(prev => prev + 1);
     } catch (error) {
       console.error('Error revoking template:', error);
       toast.error('Failed to revoke template');
@@ -210,11 +228,15 @@ export function AdminPanel({ onNavigate }) {
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    if (!window.confirm('Are you sure you want to delete this template?')) return;
     try {
       await adminAPI.deleteHabitTemplate(templateId);
       toast.success('Template deleted successfully');
-      fetchAdminData();
+      // Remove template from list locally
+      const template = habitTemplates.find(t => t._id === templateId);
+      setHabitTemplates(prev => prev.filter(t => t._id !== templateId));
+      if (template && !template.isPublic) {
+        setPendingTemplatesCount(prev => Math.max(0, prev - 1));
+      };
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error('Failed to delete template');
@@ -249,8 +271,6 @@ export function AdminPanel({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="admin" onNavigate={onNavigate} />
       
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -316,11 +336,11 @@ export function AdminPanel({ onNavigate }) {
               <Card className="p-6 border-2 border-gray-200 rounded-2xl">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-green-600" />
+                    <Target className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{stats?.activeUsers || 0}</p>
-                    <p className="text-gray-500 text-sm">Active Today</p>
+                    <p className="text-2xl font-bold">{stats?.totalHabits || 0}</p>
+                    <p className="text-gray-500 text-sm">Total Habits</p>
                   </div>
                 </div>
               </Card>
@@ -331,8 +351,8 @@ export function AdminPanel({ onNavigate }) {
                     <TrendingUp className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{stats?.newUsersToday || 0}</p>
-                    <p className="text-gray-500 text-sm">New Today</p>
+                    <p className="text-2xl font-bold">{stats?.newUsersThisWeek || 0}</p>
+                    <p className="text-gray-500 text-sm">New This Week</p>
                   </div>
                 </div>
               </Card>
@@ -351,23 +371,13 @@ export function AdminPanel({ onNavigate }) {
             </div>
 
             {/* Additional Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="p-6 border-2 border-gray-200 rounded-2xl">
                 <div className="flex items-center gap-4">
                   <Calendar className="w-6 h-6 text-gray-400" />
                   <div>
                     <p className="text-xl font-bold">{stats?.totalGroups || 0}</p>
                     <p className="text-gray-500 text-sm">Total Groups</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 border-2 border-gray-200 rounded-2xl">
-                <div className="flex items-center gap-4">
-                  <CheckCircle className="w-6 h-6 text-gray-400" />
-                  <div>
-                    <p className="text-xl font-bold">{stats?.totalHabits || 0}</p>
-                    <p className="text-gray-500 text-sm">Total Habits</p>
                   </div>
                 </div>
               </Card>
@@ -526,7 +536,7 @@ export function AdminPanel({ onNavigate }) {
                 <Card key={application._id} className="p-6 border-2 border-gray-200 rounded-2xl">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-bold">
                         {application.userId?.name?.charAt(0) || 'M'}
                       </div>
                       <div className="flex-1">

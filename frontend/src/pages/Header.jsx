@@ -100,12 +100,12 @@ export function Header({ currentPage, onNavigate }) {
   if (isLoggedIn) {
     return (
       <>
-        <header className="sticky top-0 bg-white border-b border-gray-200 z-50">
+        <header className="sticky top-0 bg-background border-b border-border z-50">
           <div className="flex items-center justify-between px-6 py-4">
             {/* Logo */}
             <button 
               onClick={() => handleNavClick('dashboard')} 
-              className="font-bold text-xl hover:text-gray-700 transition-colors"
+              className="font-bold text-xl text-foreground hover:text-muted-foreground transition-colors"
             >
               PeerSupportHub
             </button>
@@ -118,8 +118,8 @@ export function Header({ currentPage, onNavigate }) {
                   onClick={() => handleNavClick(item.page)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentPage === item.page
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                 >
                   {item.label}
@@ -131,7 +131,7 @@ export function Header({ currentPage, onNavigate }) {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentPage === 'admin'
                       ? 'bg-red-600 text-white'
-                      : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                      : 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
                   }`}
                 >
                   Admin
@@ -139,13 +139,13 @@ export function Header({ currentPage, onNavigate }) {
               )}
               <button 
                 onClick={() => handleNavClick('settings')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
               >
                 <Settings className="w-5 h-5" />
               </button>
               <Button 
                 variant="outline" 
-                className="rounded-full gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
+                className="rounded-full gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 transition-all"
                 onClick={handleLogoutClick}
               >
                 <LogOut className="w-4 h-4" />
@@ -161,8 +161,8 @@ export function Header({ currentPage, onNavigate }) {
                   onClick={() => handleNavClick(item.page)}
                   className={`px-2 py-1 rounded-lg text-sm font-medium transition-all ${
                     currentPage === item.page
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                 >
                   {item.label}
@@ -170,14 +170,14 @@ export function Header({ currentPage, onNavigate }) {
               ))}
               <button 
                 onClick={() => handleNavClick('settings')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
               >
                 <Settings className="w-5 h-5" />
               </button>
               <Button 
                 variant="outline" 
                 size="sm"
-                className="rounded-full gap-1 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
+                className="rounded-full gap-1 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 transition-all"
                 onClick={handleLogoutClick}
               >
                 <LogOut className="w-4 h-4" />
@@ -187,7 +187,7 @@ export function Header({ currentPage, onNavigate }) {
             {/* Mobile Menu */}
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Menu">
+                <button className="p-2 hover:bg-accent rounded-lg transition-colors text-foreground" aria-label="Menu">
                   <Menu className="w-6 h-6" />
                 </button>
               </SheetTrigger>
@@ -197,15 +197,15 @@ export function Header({ currentPage, onNavigate }) {
                   Navigate through PeerSupportHub
                 </SheetDescription>
                 <div className="flex flex-col gap-2 mt-8">
-                  <p className="text-sm text-gray-500 mb-4">Welcome, {userName}</p>
+                  <p className="text-sm text-muted-foreground mb-4">Welcome, {userName}</p>
                   {authNavItems.map((item) => (
                     <button
                       key={item.label}
                       onClick={() => handleNavClick(item.page)}
                       className={`text-left px-3 py-2 rounded-lg transition-all ${
                         currentPage === item.page
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                       }`}
                     >
                       {item.label}
@@ -215,16 +215,16 @@ export function Header({ currentPage, onNavigate }) {
                     onClick={() => handleNavClick('settings')}
                     className={`text-left px-3 py-2 rounded-lg transition-all ${
                       currentPage === 'settings'
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   >
                     Settings
                   </button>
-                  <hr className="border-gray-200 my-2" />
+                  <hr className="border-border my-2" />
                   <button
                     onClick={handleLogoutClick}
-                    className="text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-all"
+                    className="text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                   >
                     <LogOut className="w-4 h-4 inline mr-2" />
                     Logout
@@ -242,12 +242,12 @@ export function Header({ currentPage, onNavigate }) {
   // Default header for logged-out users
   return (
     <>
-      <header className="sticky top-0 bg-white border-b border-gray-200 z-50">
+      <header className="sticky top-0 bg-background border-b border-border z-50">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Hamburger Menu */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <button className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Menu">
+              <button className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors text-foreground" aria-label="Menu">
                 <Menu className="w-6 h-6" />
               </button>
             </SheetTrigger>
@@ -263,15 +263,15 @@ export function Header({ currentPage, onNavigate }) {
                     onClick={() => handleNavClick(item.page)}
                     className={`text-left px-3 py-2 rounded-lg transition-all ${
                       currentPage === item.page 
-                        ? 'bg-gray-900 text-white' 
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   >
                     {item.label}
                   </button>
                 ))}
                 <Button 
-                  className="mt-4 rounded-full bg-black hover:bg-gray-800 transition-colors"
+                  className="mt-4 rounded-full"
                   onClick={() => handleNavClick('membership')}
                 >
                   Join Now
@@ -291,7 +291,7 @@ export function Header({ currentPage, onNavigate }) {
           {/* Login Button */}
           <Button 
             variant="ghost" 
-            className="rounded-full px-4 hover:bg-gray-100 transition-colors"
+            className="rounded-full px-4 hover:bg-accent transition-colors"
             onClick={() => handleNavClick('login')}
           >
             Login

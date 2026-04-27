@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, profileAPI, setLogoutCallback } from '../services/api';
-import { TopNavBar } from '../components/TopNavBar';
 
 export function Buddies({ onNavigate }) {
   const [buddies, setBuddies] = useState([]);
@@ -48,7 +47,9 @@ export function Buddies({ onNavigate }) {
         setIsSearching(true);
         try {
           const results = await profileAPI.searchUsers(findSearchTerm, 20);
-          setSearchResults(results);
+          // Filter out users who are already buddies
+          const filteredResults = results.filter(user => user.buddyStatus !== 'buddy');
+          setSearchResults(filteredResults);
         } catch (error) {
           console.error('Error searching users:', error);
           toast.error('Failed to search users');
@@ -70,7 +71,9 @@ export function Buddies({ onNavigate }) {
         setIsSearching(true);
         try {
           const results = await profileAPI.searchUsers('', 20);
-          setSearchResults(results);
+          // Filter out users who are already buddies
+          const filteredResults = results.filter(user => user.buddyStatus !== 'buddy');
+          setSearchResults(filteredResults);
         } catch (error) {
           console.error('Error loading users:', error);
         } finally {
@@ -103,11 +106,22 @@ export function Buddies({ onNavigate }) {
     try {
       await profileAPI.acceptBuddyRequest(requestId);
       toast.success('Buddy request accepted!');
-      fetchBuddyData();
-      // Refresh search results if on find tab
+      // Update local state immediately - remove from pending requests
+      setPendingRequests(prev => prev.filter(r => r._id !== requestId));
+      // Refetch buddies to include the new buddy
+      const [buddiesData, sentData] = await Promise.all([
+        profileAPI.getBuddies().catch(() => []),
+        profileAPI.getSentBuddyRequests().catch(() => []),
+      ]);
+      setBuddies(buddiesData);
+      setSentRequests(sentData);
+      // Dispatch custom event so TopNavBar can update its badge
+      window.dispatchEvent(new CustomEvent('buddyRequestsUpdated'));
+      // Refresh search results if on find tab (filter out new buddy)
       if (activeTab === 'find') {
         const results = await profileAPI.searchUsers(findSearchTerm, 20);
-        setSearchResults(results);
+        const filteredResults = results.filter(user => user.buddyStatus !== 'buddy');
+        setSearchResults(filteredResults);
       }
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to accept request');
@@ -118,7 +132,10 @@ export function Buddies({ onNavigate }) {
     try {
       await profileAPI.rejectBuddyRequest(requestId);
       toast.success('Request declined');
-      fetchBuddyData();
+      // Update local state immediately
+      setPendingRequests(prev => prev.filter(r => r._id !== requestId));
+      // Dispatch custom event so TopNavBar can update its badge
+      window.dispatchEvent(new CustomEvent('buddyRequestsUpdated'));
     } catch (error) {
       toast.error(error.response?.data?.msg || 'Failed to reject request');
     }
@@ -157,26 +174,24 @@ export function Buddies({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <TopNavBar currentPage="buddies" onNavigate={onNavigate} />
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-border sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 hover:text-gray-900">
+              <button onClick={() => onNavigate('dashboard')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <ArrowLeft className="w-6 h-6" />
               </button>
-              <h1 className="text-2xl font-bold">Accountability Buddies</h1>
+              <h1 className="text-2xl font-bold text-foreground">Accountability Buddies</h1>
             </div>
             {pendingRequests.length > 0 && (
               <button
                 onClick={() => setActiveTab('requests')}
-                className="relative p-2 rounded-full hover:bg-gray-100"
+                className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-muted"
               >
-                <Bell className="w-6 h-6" />
+                <Bell className="w-6 h-6 dark:text-gray-400" />
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {pendingRequests.length}
                 </span>
@@ -193,8 +208,8 @@ export function Buddies({ onNavigate }) {
             onClick={() => setActiveTab('buddies')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               activeTab === 'buddies'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             My Buddies ({buddies.length})
@@ -203,8 +218,8 @@ export function Buddies({ onNavigate }) {
             onClick={() => setActiveTab('requests')}
             className={`px-6 py-2 rounded-full font-medium transition-colors relative ${
               activeTab === 'requests'
-                ? 'bg-black text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-black text-white dark:bg-primary dark:text-primary-foreground'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             Pending Requests
@@ -218,8 +233,8 @@ export function Buddies({ onNavigate }) {
             onClick={() => setActiveTab('find')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               activeTab === 'find'
-                ? 'bg-blue-600 text-white'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                ? 'bg-blue-600 text-white dark:bg-blue-700'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'
             }`}
           >
             <UserPlus className="w-4 h-4 inline mr-2" />
@@ -232,13 +247,13 @@ export function Buddies({ onNavigate }) {
           <>
             {/* Search */}
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <Input
                 type="text"
                 placeholder="Search your buddies..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 py-3 rounded-full border-2 border-gray-300"
+                className="pl-12 py-3 rounded-full border-2 border-gray-300 dark:border-input dark:bg-input dark:text-foreground"
               />
             </div>
 
@@ -258,7 +273,7 @@ export function Buddies({ onNavigate }) {
                           className="w-14 h-14 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-xl font-bold">
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {buddy.name?.charAt(0) || '?'}
                         </div>
                       )}
@@ -322,7 +337,7 @@ export function Buddies({ onNavigate }) {
                       className="border-2 border-gray-200 rounded-2xl p-4"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {request.sender?.name?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1">
@@ -371,7 +386,7 @@ export function Buddies({ onNavigate }) {
                       className="border-2 border-yellow-200 bg-yellow-50/50 rounded-2xl p-4"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center text-xl font-bold text-yellow-600">
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {request.recipient?.name?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1">
@@ -440,11 +455,7 @@ export function Buddies({ onNavigate }) {
                           className="w-14 h-14 rounded-full object-cover"
                         />
                       ) : (
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
-                          user.buddyStatus === 'buddy'
-                            ? 'bg-gradient-to-br from-green-200 to-green-300 text-green-700'
-                            : 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600'
-                        }`}>
+                        <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-xl font-bold text-white">
                           {user.name?.charAt(0) || '?'}
                         </div>
                       )}

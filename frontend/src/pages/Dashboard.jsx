@@ -5,7 +5,6 @@ import { Progress } from '../components/ui/progress';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
-import { TopNavBar } from '../components/TopNavBar';
 import { 
   CheckCircle2, 
   Circle, 
@@ -211,175 +210,7 @@ export function Dashboard({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button onClick={() => onNavigate('home')}>
-              <span className="text-foreground font-bold text-2xl">PeerSupportHub</span>
-            </button>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <button 
-                onClick={() => onNavigate('habits')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                My Habits
-              </button>
-              <button 
-                onClick={() => onNavigate('groups')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Groups
-              </button>
-              <button 
-                onClick={() => onNavigate('challenges')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Challenges
-              </button>
-              <button 
-                onClick={() => onNavigate('mentors')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Mentors
-              </button>
-              <button 
-                onClick={() => onNavigate('buddies')}
-                className="text-gray-600 hover:text-gray-900 transition-colors relative"
-              >
-                Buddies
-                {pendingRequests.length > 0 && (
-                  <span className="absolute -top-2 -right-3 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {pendingRequests.length}
-                  </span>
-                )}
-              </button>
-              <button 
-                onClick={() => onNavigate('messages')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </button>
-              <NotificationsDropdown onNavigate={onNavigate} />
-              <button 
-                onClick={() => onNavigate('reflections')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Reflections
-              </button>
-              <button 
-                onClick={() => onNavigate('settings')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              {isAdmin && (
-                <button 
-                  onClick={() => onNavigate('admin')}
-                  className="text-red-600 hover:text-red-700 transition-colors"
-                >
-                  <Shield className="w-5 h-5" />
-                </button>
-              )}
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="rounded-full border-2 border-black px-6 py-2"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </nav>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-gray-600 hover:text-gray-900"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <nav className="md:hidden mt-4 pb-4 space-y-3 border-t border-gray-200 pt-4">
-              <button 
-                onClick={() => onNavigate('habits')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                My Habits
-              </button>
-              <button 
-                onClick={() => onNavigate('groups')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                Groups
-              </button>
-              <button 
-                onClick={() => onNavigate('challenges')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                Challenges
-              </button>
-              <button 
-                onClick={() => onNavigate('mentors')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                Mentors
-              </button>
-              <button 
-                onClick={() => onNavigate('buddies')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2 flex items-center"
-              >
-                Buddies
-                {pendingRequests.length > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                    {pendingRequests.length}
-                  </span>
-                )}
-              </button>
-              <button 
-                onClick={() => onNavigate('messages')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                Messages
-              </button>
-              <button 
-                onClick={() => onNavigate('reflections')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                Reflections
-              </button>
-              <button 
-                onClick={() => onNavigate('settings')}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 transition-colors py-2"
-              >
-                Settings
-              </button>
-              {isAdmin && (
-                <button 
-                  onClick={() => onNavigate('admin')}
-                  className="block w-full text-left text-red-600 hover:text-red-700 transition-colors py-2 flex items-center"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Admin Panel
-                </button>
-              )}
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="w-full rounded-full border-2 border-black"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </nav>
-          )}
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -388,35 +219,35 @@ export function Dashboard({ onNavigate }) {
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold">
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                   Welcome back, {userName}! 👋
                 </h1>
                 {/* User Role Badge */}
                 {userData.userType === 'Admin' ? (
-                  <span className="flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium dark:bg-red-900/30 dark:text-red-400">
                     <Shield className="w-4 h-4" />
                     Admin
                   </span>
                 ) : userData.userType === 'Mentor' ? (
-                  <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium dark:bg-purple-900/30 dark:text-purple-400">
                     <GraduationCap className="w-4 h-4" />
                     Mentor
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                  <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium dark:bg-blue-900/30 dark:text-blue-400">
                     <User className="w-4 h-4" />
                     Member
                   </span>
                 )}
               </div>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-lg dark:text-gray-400">
                 {loggedToday === totalHabits 
                   ? "Amazing! You've completed all your habits today!" 
                   : `You have ${totalHabits - loggedToday} habit${totalHabits - loggedToday !== 1 ? 's' : ''} left today`}
               </p>
             </div>
 
-            {userPlan !== 'free' && (
+            {userPlan !== 'free' && !isAdmin && (
               <div className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-400 rounded-full px-4 py-2">
                 <Crown className="w-5 h-5 text-yellow-600" />
                 <span className="font-bold text-yellow-900 capitalize">{userPlan}</span>
@@ -429,18 +260,18 @@ export function Dashboard({ onNavigate }) {
           {/* Main Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Today's Habits */}
-            <Card className="border-2 border-gray-900 rounded-2xl p-6 md:p-8 bg-white">
+            <Card className="border-2 border-gray-900 rounded-2xl p-6 md:p-8 bg-white dark:bg-card dark:border-border dark:text-card-foreground">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">Today's Habits</h2>
                 <div className="text-right">
                   <div className="text-2xl font-bold">{loggedToday}/{totalHabits}</div>
-                  <div className="text-sm text-gray-600">tracked</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">tracked</div>
                 </div>
               </div>
 
               <div className="mb-6">
                 <Progress value={progressPercent} className="h-3" />
-                <p className="text-sm text-gray-600 mt-2">{progressPercent}% complete</p>
+                <p className="text-sm text-gray-600 mt-2 dark:text-gray-400">{progressPercent}% complete</p>
               </div>
 
               <div className="space-y-3">
@@ -456,10 +287,10 @@ export function Dashboard({ onNavigate }) {
                       className={`
                         w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left
                         ${isCompleted 
-                          ? 'border-green-500 bg-green-50 cursor-default' 
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20 cursor-default' 
                           : isPaused
-                          ? 'border-purple-400 bg-purple-50 cursor-default'
-                          : 'border-gray-300 hover:border-gray-400 bg-white cursor-pointer'
+                          ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20 cursor-default'
+                          : 'border-gray-300 hover:border-gray-400 bg-white dark:bg-card dark:border-border dark:hover:border-gray-500 cursor-pointer'
                         }
                       `}
                     >
@@ -468,14 +299,14 @@ export function Dashboard({ onNavigate }) {
                       ) : isPaused ? (
                         <Circle className="w-6 h-6 text-purple-500 flex-shrink-0" />
                       ) : (
-                        <Circle className="w-6 h-6 text-gray-400 flex-shrink-0" />
+                        <Circle className="w-6 h-6 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                       )}
                       <span className={`flex-1 text-lg ${
                         isCompleted 
-                          ? 'line-through text-gray-500' 
+                          ? 'line-through text-gray-500 dark:text-gray-500' 
                           : isPaused 
-                          ? 'line-through text-purple-600 decoration-purple-400' 
-                          : 'text-gray-900'
+                          ? 'line-through text-purple-600 decoration-purple-400 dark:text-purple-400' 
+                          : 'text-gray-900 dark:text-foreground'
                       }`}>
                         {habit.name}
                         {habit.isPublic && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Public</span>}
@@ -499,14 +330,14 @@ export function Dashboard({ onNavigate }) {
 
               <Button 
                 onClick={() => onNavigate('habits')}
-                className="w-full mt-6 rounded-full bg-black hover:bg-gray-800 py-6 text-lg"
+                className="w-full mt-6 rounded-full bg-black hover:bg-gray-800 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 py-6 text-lg"
               >
                 Manage My Habits
               </Button>
             </Card>
 
             {/* Weekly Overview */}
-            <Card className="border-2 border-gray-900 rounded-2xl p-6 md:p-8 bg-white">
+            <Card className="border-2 border-gray-900 rounded-2xl p-6 md:p-8 bg-white dark:bg-card dark:border-border dark:text-card-foreground">
               <h2 className="text-2xl font-bold mb-6">This Week</h2>
               
               <div className="grid grid-cols-7 gap-2 mb-6">
@@ -520,9 +351,9 @@ export function Dashboard({ onNavigate }) {
                   { day: 'Sun', percentage: 0, isToday: false, isFuture: false },
                 ]).map((dayData, index) => {
                   // Determine color based on percentage and status
-                  let bgColor = 'bg-gray-200';
+                  let bgColor = 'bg-gray-200 dark:bg-muted';
                   if (dayData.isFuture) {
-                    bgColor = 'bg-gray-100';
+                    bgColor = 'bg-gray-100 dark:bg-muted/50';
                   } else if (dayData.isToday) {
                     bgColor = dayData.percentage >= 80 ? 'bg-green-500' : 
                               dayData.percentage >= 50 ? 'bg-yellow-400' : 
@@ -530,15 +361,15 @@ export function Dashboard({ onNavigate }) {
                   } else {
                     bgColor = dayData.percentage >= 80 ? 'bg-green-500' : 
                               dayData.percentage >= 50 ? 'bg-yellow-400' : 
-                              dayData.percentage > 0 ? 'bg-orange-400' : 'bg-gray-300';
+                              dayData.percentage > 0 ? 'bg-orange-400' : 'bg-gray-300 dark:bg-gray-600';
                   }
                   
                   return (
                     <div key={index} className="text-center">
-                      <div className={`text-xs mb-2 ${dayData.isToday ? 'font-bold text-blue-600' : 'text-gray-600'}`}>
+                      <div className={`text-xs mb-2 ${dayData.isToday ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}>
                         {dayData.day?.charAt(0) || ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index]}
                       </div>
-                      <div className={`relative w-full aspect-square rounded-lg ${bgColor} ${dayData.isToday ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}>
+                      <div className={`relative w-full aspect-square rounded-lg ${bgColor} ${dayData.isToday ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-card' : ''}`}>
                         {!dayData.isFuture && dayData.percentage > 0 && (
                           <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
                             {dayData.percentage}%
@@ -553,12 +384,12 @@ export function Dashboard({ onNavigate }) {
               <div className="flex items-center justify-between text-center">
                 <div>
                   <div className="text-3xl font-bold">{weekProgress}%</div>
-                  <div className="text-sm text-gray-600">Week Progress</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Week Progress</div>
                 </div>
-                <div className="w-px h-12 bg-gray-300"></div>
+                <div className="w-px h-12 bg-gray-300 dark:bg-border"></div>
                 <div>
                   <div className="text-3xl font-bold">{currentStreak}</div>
-                  <div className="text-sm text-gray-600">Day Streak 🔥</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Day Streak 🔥</div>
                 </div>
               </div>
             </Card>
@@ -631,7 +462,7 @@ export function Dashboard({ onNavigate }) {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Stats Card */}
-            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white">
+            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white dark:bg-card dark:border-border dark:text-card-foreground">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 Your Stats
@@ -639,28 +470,28 @@ export function Dashboard({ onNavigate }) {
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Total Habits</span>
+                  <span className="text-gray-600 dark:text-gray-400">Total Habits</span>
                   <span className="font-bold text-lg">{stats?.totalActiveHabits || habits.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Longest Streak</span>
+                  <span className="text-gray-600 dark:text-gray-400">Longest Streak</span>
                   <span className="font-bold text-lg text-orange-500 flex items-center gap-1">
                     {stats?.longestStreak || 0} <Flame className="w-4 h-4" />
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Completion Rate</span>
-                  <span className="font-bold text-lg text-green-600">{stats?.completionRate || '0%'}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Completion Rate</span>
+                  <span className="font-bold text-lg text-green-600 dark:text-green-500">{stats?.completionRate || '0%'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Days Logged</span>
+                  <span className="text-gray-600 dark:text-gray-400">Days Logged</span>
                   <span className="font-bold text-lg">{stats?.totalDaysLogged || 0}</span>
                 </div>
               </div>
             </Card>
 
             {/* Buddies Card */}
-            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white">
+            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white dark:bg-card dark:border-border dark:text-card-foreground">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <UserPlus className="w-5 h-5" />
                 Accountability Buddies
@@ -669,8 +500,8 @@ export function Dashboard({ onNavigate }) {
               <div className="space-y-3">
                 {buddies.length > 0 ? (
                   buddies.slice(0, 3).map((buddy) => (
-                    <div key={buddy._id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold">
+                    <div key={buddy._id} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-muted/50 rounded-lg">
+                      <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-sm font-bold text-white">
                         {buddy.name?.charAt(0) || '?'}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -678,9 +509,9 @@ export function Dashboard({ onNavigate }) {
                       </div>
                       <button 
                         onClick={() => onNavigate(`messages-${buddy._id}`)}
-                        className="p-1.5 hover:bg-gray-200 rounded-full"
+                        className="p-1.5 hover:bg-gray-200 dark:hover:bg-muted rounded-full"
                       >
-                        <MessageCircle className="w-4 h-4 text-gray-500" />
+                        <MessageCircle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </button>
                     </div>
                   ))
@@ -693,7 +524,7 @@ export function Dashboard({ onNavigate }) {
                 <Button 
                   variant="outline"
                   onClick={() => onNavigate('buddies')}
-                  className="w-full rounded-full border-2 border-black relative"
+                  className="w-full rounded-full border-2 border-black dark:border-primary dark:text-primary hover:bg-accent relative"
                 >
                   {pendingRequests.length > 0 && (
                     <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -706,7 +537,7 @@ export function Dashboard({ onNavigate }) {
             </Card>
 
             {/* Groups Card */}
-            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white">
+            <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-white dark:bg-card dark:border-border dark:text-card-foreground">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Users className="w-5 h-5" />
                 Your Groups
@@ -718,23 +549,23 @@ export function Dashboard({ onNavigate }) {
                     <button 
                       key={group._id || index} 
                       onClick={() => onNavigate(`group-chat-${group._id}`)}
-                      className="w-full p-3 bg-gray-50 rounded-lg text-left hover:bg-gray-100 transition-colors"
+                      className="w-full p-3 bg-gray-50 dark:bg-muted/50 rounded-lg text-left hover:bg-gray-100 dark:hover:bg-muted transition-colors"
                     >
                       <div className="font-bold">{group.name}</div>
-                      <div className="text-sm text-gray-600">{group.members?.length || 0} members</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{group.members?.length || 0} members</div>
                     </button>
                   ))
                 ) : (
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-gray-50 dark:bg-muted/50 rounded-lg">
                     <div className="font-bold">No groups yet</div>
-                    <div className="text-sm text-gray-600">Join a group to stay accountable</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Join a group to stay accountable</div>
                   </div>
                 )}
                 
                 <Button 
                   variant="outline"
                   onClick={() => onNavigate('groups')}
-                  className="w-full rounded-full border-2 border-black"
+                  className="w-full rounded-full border-2 border-black dark:border-primary dark:text-primary hover:bg-accent"
                 >
                   {groups.length > 0 ? 'View All Groups' : 'Browse Groups'}
                 </Button>
@@ -742,25 +573,7 @@ export function Dashboard({ onNavigate }) {
             </Card>
 
             {/* Upgrade CTA (for free users) */}
-            {userPlan === 'free' && (
-              <Card className="border-2 border-gray-900 rounded-2xl p-6 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  Unlock More
-                </h3>
-                
-                <p className="text-gray-300 text-sm mb-4">
-                  Upgrade to track unlimited habits and get mentor support
-                </p>
-                
-                <Button 
-                  onClick={() => onNavigate('membership')}
-                  className="w-full rounded-full bg-white text-gray-900 hover:bg-gray-100"
-                >
-                  View Plans
-                </Button>
-              </Card>
-            )}
+            {/* Removed Unlock More section */}
           </div>
         </div>
       </main>

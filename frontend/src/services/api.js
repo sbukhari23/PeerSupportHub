@@ -430,6 +430,18 @@ export const messagesAPI = {
     const response = await api.delete(`/messages/direct/${messageId}`);
     return response.data;
   },
+
+  // React to direct message
+  reactToDirectMessage: async (messageId, emoji) => {
+    const response = await api.post(`/messages/direct/${messageId}/react`, { emoji });
+    return response.data;
+  },
+
+  // Flag direct message for moderation
+  flagDirectMessage: async (messageId) => {
+    const response = await api.post(`/messages/direct/${messageId}/flag`);
+    return response.data;
+  },
 };
 
 // Notifications API

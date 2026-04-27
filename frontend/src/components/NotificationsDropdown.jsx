@@ -68,6 +68,7 @@ export function NotificationsDropdown({ onNavigate }) {
 
   const handleOpen = () => {
     setIsOpen(true);
+    setUnreadCount(0); // Clear badge immediately when opening
     fetchNotifications();
   };
 
@@ -154,20 +155,39 @@ export function NotificationsDropdown({ onNavigate }) {
   const handleNotificationClick = (notification) => {
     handleMarkAsRead(notification._id);
     
-    // Navigate based on notification type
+    // Navigate based on notification link or type
+    // The link from backend now uses the correct hash format (e.g., group-chat-{id}, messages-{id})
     if (notification.link) {
-      onNavigate(notification.link);
+      let link = notification.link;
+      
+      // Fix legacy/bad links from old notifications
+      if (link.includes('/dashboard/habits')) link = 'habits';
+      if (link.includes('/profile/buddy')) link = 'buddies';
+      
+      // Remove leading slash if present
+      if (link.startsWith('/')) link = link.substring(1);
+      
+      onNavigate(link);
     } else {
+      // Fallback to type-based navigation
       switch (notification.type) {
         case 'buddy_request':
         case 'buddy_accepted':
           onNavigate('buddies');
           break;
         case 'message':
-          onNavigate(`messages-${notification.relatedId}`);
+          if (notification.relatedId) {
+            onNavigate(`messages-${notification.relatedId}`);
+          } else {
+            onNavigate('messages');
+          }
           break;
         case 'group_message':
-          onNavigate(`group-chat-${notification.relatedId}`);
+          if (notification.relatedId) {
+            onNavigate(`group-chat-${notification.relatedId}`);
+          } else {
+            onNavigate('groups');
+          }
           break;
         case 'challenge':
         case 'challenge_complete':
@@ -199,7 +219,7 @@ export function NotificationsDropdown({ onNavigate }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleOpen}
-        className="relative p-2 text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
+        className="relative p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent transition-colors"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -210,10 +230,10 @@ export function NotificationsDropdown({ onNavigate }) {
       </button>
 
       {isOpen && (
-        <Card className="absolute right-0 mt-2 w-80 md:w-96 max-h-[70vh] overflow-hidden shadow-xl z-50">
+        <Card className="absolute right-0 mt-2 w-80 md:w-96 max-h-[70vh] overflow-hidden shadow-xl z-[9999] bg-card border-border">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-            <h3 className="font-semibold">Notifications</h3>
+          <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
+            <h3 className="font-semibold text-foreground">Notifications</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
@@ -226,7 +246,7 @@ export function NotificationsDropdown({ onNavigate }) {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-gray-200 rounded"
+                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -237,14 +257,14 @@ export function NotificationsDropdown({ onNavigate }) {
           <div className="overflow-y-auto max-h-[50vh]">
             {isLoading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               </div>
             ) : notifications.length > 0 ? (
               notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`flex items-start gap-3 p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
-                    !notification.read ? 'bg-blue-50/50' : ''
+                  className={`flex items-start gap-3 p-4 border-b border-border hover:bg-accent/50 cursor-pointer transition-colors ${
+                    !notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
@@ -252,15 +272,15 @@ export function NotificationsDropdown({ onNavigate }) {
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${!notification.read ? 'font-medium' : 'text-gray-700'}`}>
+                    <p className={`text-sm ${!notification.read ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                       {notification.title || notification.message}
                     </p>
-                    {notification.body && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                        {notification.body}
+                    {(notification.message && notification.title) && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {notification.message}
                       </p>
                     )}
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground/70 mt-1">
                       {formatTime(notification.createdAt)}
                     </p>
                   </div>
@@ -271,7 +291,7 @@ export function NotificationsDropdown({ onNavigate }) {
                           e.stopPropagation();
                           handleMarkAsRead(notification._id);
                         }}
-                        className="p-1 text-blue-500 hover:bg-blue-100 rounded"
+                        className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
                         title="Mark as read"
                       >
                         <Check className="w-4 h-4" />
@@ -282,7 +302,7 @@ export function NotificationsDropdown({ onNavigate }) {
                         e.stopPropagation();
                         handleDelete(notification._id);
                       }}
-                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                      className="p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -292,26 +312,11 @@ export function NotificationsDropdown({ onNavigate }) {
               ))
             ) : (
               <div className="p-8 text-center">
-                <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No notifications yet</p>
+                <Bell className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">No notifications yet</p>
               </div>
             )}
           </div>
-
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="p-3 border-t bg-gray-50">
-              <button
-                onClick={() => {
-                  onNavigate('notifications');
-                  setIsOpen(false);
-                }}
-                className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                View all notifications
-              </button>
-            </div>
-          )}
         </Card>
       )}
     </div>
